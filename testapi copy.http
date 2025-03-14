@@ -1,0 +1,8 @@
+### Teste de Login
+POST http://localhost:8080/login
+Content-Type: application/json
+
+{
+    "login": "ernane.moraes",
+    "senha": "Unileste"
+}
