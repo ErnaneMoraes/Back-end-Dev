@@ -191,7 +191,7 @@ app.listen(PORT, () => {
 
 // Rota de teste
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../sistema_aralev-master/sistema_aralev-master/index.html'));
+  res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 // Tratamento de erros
