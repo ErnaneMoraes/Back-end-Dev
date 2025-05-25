@@ -172,8 +172,9 @@ app.get("/desc", async (req, res) => {
 });
 
 // Redirecionamento local para testes
-app.get("/inicio", verifyJWT, (req, res) => {
-  res.redirect("http://127.0.0.1:5500/sistema_aralev-master/inicio.html");
+//app.get("/inicio", verifyJWT, (req, res) => {
+app.get("/inicio", (req, res) => {
+  res.redirect("public/inicio.html");
 });
 
 // Login/Logout
