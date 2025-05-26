@@ -111,7 +111,7 @@ function preencherDadosCliente(option) {
 
 async function carregarProdutos() {
     try {
-        const response = await fetch(`${API_URL}/api/itens`, {
+        const response = await fetch("https://araleve-dev-486376460769.southamerica-east1.run.app/api/itens", {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
