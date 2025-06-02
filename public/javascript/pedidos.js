@@ -2,7 +2,7 @@ import { API_URL } from './api.js';
 let produtosDisponiveis = [];
 let clientesDisponiveis = [];
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     setTimeout(() => {
         inicializarAplicacao();
     }, 100);
@@ -27,16 +27,16 @@ function inicializarMascaras() {
     if (!$) return;
 
     $('input[name="num_celular"]').mask('(00) 0 0000-0000');
-    $('input[name="cpf_ou_cnpj"]').mask('000.000.000-00', {reverse: true});
+    $('input[name="cpf_ou_cnpj"]').mask('000.000.000-00', { reverse: true });
     $('input[name="CEP"]').mask('00000-000');
     $('input[name="UF"]').mask('AA');
-    $('input[name^="desconto"], input[name^="subtotal"], input[name="total"]').mask('#.##0,00', {reverse: true});
+    $('input[name^="desconto"], input[name^="subtotal"], input[name="total"]').mask('#.##0,00', { reverse: true });
 }
 
 function inicializarEventos() {
     document.querySelector('.add_produto')?.addEventListener('click', adicionarProduto);
-    
-    document.addEventListener('input', function(e) {
+
+    document.addEventListener('input', function (e) {
         if (e.target.matches('.quantidade-produto, .desconto-produto, .select-produto')) {
             calcularSubtotal(e.target);
         }
@@ -45,69 +45,122 @@ function inicializarEventos() {
 
 async function carregarClientes() {
     try {
-        const response = await fetch(`${API_URL}/api/pessoas`, {
+        const response = await fetch("https://araleve-dev-486376460769.southamerica-east1.run.app/api/pessoas", {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
-        
+
         if (!response.ok) throw new Error('Erro ao carregar clientes');
-        
+
         const data = await response.json();
         clientesDisponiveis = data.data || [];
-        configurarAutocompleteClientes();
+        atualizarSelectClientes();
     } catch (error) {
         console.error('Erro ao carregar clientes:', error);
         throw error;
     }
 }
 
-function configurarAutocompleteClientes() {
-    const inputCliente = document.querySelector('input[name="nome_cliente"]');
-    const datalist = document.getElementById('clientes-list');
-    
-    if (!inputCliente || !datalist) return;
-    
-    datalist.innerHTML = '';
-    
+
+function atualizarSelectClientes() {
+    const select = document.getElementById('select-cliente');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Selecione um cliente</option>';
+    console.log('Cliente recebido:', clientesDisponiveis);
     clientesDisponiveis.forEach(cliente => {
         const option = document.createElement('option');
-        option.value = cliente.NOME;
-        option.dataset.id = cliente.ID_PESSOA_PK;
-        option.dataset.cpf = cliente.CPF_CNPJ;
-        option.dataset.celular = cliente.CELULAR;
-        option.dataset.endereco = `${cliente.RUA}, ${cliente.NUMERO}, ${cliente.CIDADE}/${cliente.UF}`;
-        datalist.appendChild(option);
+        option.value = cliente.ID_PESSOA_PK;
+        option.textContent = cliente.NOME;
+        // option.dataset.id = cliente.ID_PESSOA_PK;F
+        option.dataset.cliente = JSON.stringify(cliente);
+        select.appendChild(option);
     });
-    
-    inputCliente.addEventListener('change', function() {
-        const selectedOption = document.querySelector(`#clientes-list option[value="${this.value}"]`);
-        if (selectedOption) {
-            preencherDadosCliente(selectedOption);
-        }
-    });
+    //     clientesDisponiveis.forEach(cliente => {
+    //     const option = document.createElement('option');
+    //     option.value = cliente.NOME;
+    //     option.dataset.id = cliente.ID_PESSOA_PK;
+    //     option.dataset.cpf = cliente.CPF_CNPJ;
+    //     option.dataset.celular = cliente.CELULAR;
+    //     option.dataset.endereco = `${cliente.RUA}, ${cliente.NUMERO}, ${cliente.CIDADE}/${cliente.UF}`;
+    //     datalist.appendChild(option);
+    // });
 }
 
-function preencherDadosCliente(option) {
-    const campos = {
-        'cpf_ou_cnpj': formatarDocumento(option.dataset.cpf),
-        'num_celular': formatarTelefone(option.dataset.celular)
-    };
 
-    const endereco = option.dataset.endereco?.split(', ') || [];
-    if (endereco.length >= 3) {
-        campos['nome_rua'] = endereco[0];
-        campos['numero_casa'] = endereco[1];
-        const cidadeUf = endereco[2].split('/');
-        campos['cidade'] = cidadeUf[0];
-        campos['UF'] = cidadeUf[1];
+document.addEventListener('DOMContentLoaded', () => {
+    carregarProdutos();
+    carregarClientes();
+
+    const selectCliente = document.getElementById('select-cliente');
+    if (selectCliente) {
+        selectCliente.addEventListener('change', function () {
+            const clienteSelecionado = this.options[this.selectedIndex];
+            if (!clienteSelecionado || !clienteSelecionado.dataset.cliente) return;
+
+            const cliente = JSON.parse(clienteSelecionado.dataset.cliente);
+            console.log('Cliente selecionado:', cliente);
+
+            document.querySelector('[name="num_celular"]').value = cliente.CELULAR || '';
+            document.querySelector('[name="cpf_ou_cnpj"]').value = cliente.CPF_CNPJ || '';
+            document.querySelector('[name="nome_rua"]').value = cliente.RUA || '';
+            document.querySelector('[name="numero_casa"]').value = cliente.NUMERO || '';
+            document.querySelector('[name="CEP"]').value = cliente.CEP || '';
+            document.querySelector('[name="cidade"]').value = cliente.CIDADE || '';
+            document.querySelector('[name="UF"]').value = cliente.UF || '';
+        });
     }
+});
 
-    Object.entries(campos).forEach(([name, value]) => {
-        const input = document.querySelector(`input[name="${name}"]`);
-        if (input) input.value = value;
-    });
-}
+
+
+// function configurarAutocompleteClientes() {
+//     const inputCliente = document.querySelector('input[name="nome_cliente"]');
+//     const datalist = document.getElementById('clientes-list');
+
+//     if (!inputCliente || !datalist) return;
+
+//     datalist.innerHTML = '';
+
+//     clientesDisponiveis.forEach(cliente => {
+//         const option = document.createElement('option');
+//         option.value = cliente.NOME;
+//         option.dataset.id = cliente.ID_PESSOA_PK;
+//         option.dataset.cpf = cliente.CPF_CNPJ;
+//         option.dataset.celular = cliente.CELULAR;
+//         option.dataset.endereco = `${cliente.RUA}, ${cliente.NUMERO}, ${cliente.CIDADE}/${cliente.UF}`;
+//         datalist.appendChild(option);
+//     });
+
+//     inputCliente.addEventListener('change', function () {
+//         const selectedOption = document.querySelector(`#clientes-list option[value="${this.value}"]`);
+//         if (selectedOption) {
+//             preencherDadosCliente(selectedOption);
+//         }
+//     });
+// }
+
+// function preencherDadosCliente(option) {
+//     const campos = {
+//         'cpf_ou_cnpj': formatarDocumento(option.dataset.cpf),
+//         'num_celular': formatarTelefone(option.dataset.celular)
+//     };
+
+//     const endereco = option.dataset.endereco?.split(', ') || [];
+//     if (endereco.length >= 3) {
+//         campos['nome_rua'] = endereco[0];
+//         campos['numero_casa'] = endereco[1];
+//         const cidadeUf = endereco[2].split('/');
+//         campos['cidade'] = cidadeUf[0];
+//         campos['UF'] = cidadeUf[1];
+//     }
+
+//     Object.entries(campos).forEach(([name, value]) => {
+//         const input = document.querySelector(`input[name="${name}"]`);
+//         if (input) input.value = value;
+//     });
+// }
 
 async function carregarProdutos() {
     try {
@@ -116,9 +169,9 @@ async function carregarProdutos() {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
-        
+
         if (!response.ok) throw new Error('Erro ao carregar produtos');
-        
+
         const data = await response.json();
         produtosDisponiveis = data.data || [];
         atualizarSelectProdutos();
@@ -155,7 +208,7 @@ function adicionarProduto() {
                 <option value="">Selecione um produto</option>
                 ${produtosDisponiveis.map(produto => `
                     <option value="${produto.idProduto}" data-preco="${produto.precoVenda}">
-                        ${produto.NOME} (${formatarMoeda(produto.precoVenda)})
+                        ${produto.nome} (${formatarMoeda(produto.precoVenda)})
                     </option>
                 `).join('')}
             </select>
@@ -200,10 +253,10 @@ function calcularSubtotal(elemento) {
     const quantidade = parseFloat(quantidadeInput.value) || 0;
     const desconto = parseFloat(descontoInput.value.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
     const precoUnitario = select.value ? parseFloat(select.selectedOptions[0]?.dataset.preco) : 0;
-    
+
     const subtotal = (quantidade * precoUnitario) - desconto;
     subtotalInput.value = formatarMoeda(subtotal);
-    
+
     calcularTotalPedido();
 }
 
@@ -213,7 +266,7 @@ function calcularTotalPedido() {
         const valor = parseFloat(input.value.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
         total += valor;
     });
-    
+
     const totalInput = document.querySelector('input[name="total"]');
     if (totalInput) {
         totalInput.value = formatarMoeda(total);
@@ -221,10 +274,10 @@ function calcularTotalPedido() {
 }
 
 function validarPedido() {
-    const cliente = document.querySelector('input[name="nome_cliente"]')?.value;
-    if (!cliente) {
+    const selectCliente = document.getElementById('select-cliente');
+    if (!selectCliente || !selectCliente.value) {
         mostrarErro('Selecione um cliente');
-        return;
+        return false;
     }
 
     let temProdutosValidos = false;
@@ -234,10 +287,11 @@ function validarPedido() {
 
     if (!temProdutosValidos) {
         mostrarErro('Adicione pelo menos um produto');
-        return;
+        return false;
     }
 
     abrirPopUp();
+    return true;
 }
 
 function abrirPopUp() {
@@ -253,19 +307,19 @@ function fecharPopUp() {
 async function confirmarPedido() {
     const popUp = document.getElementById('popUp');
     const btnConfirmar = popUp?.querySelector('.btn_salvar');
-    
+
     try {
         if (btnConfirmar) {
             btnConfirmar.disabled = true;
             btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
         }
-        
+
         const resultado = await emitirPedido();
         mostrarSucesso(`Pedido criado com sucesso!`);
-        
+
         const form = document.getElementById('formPedido');
         if (form) form.reset();
-        
+
     } catch (error) {
         console.error('Erro ao confirmar pedido:', error);
         mostrarErro(error.message);
@@ -280,86 +334,66 @@ async function confirmarPedido() {
 
 async function emitirPedido() {
     try {
-        // 1. Verifica se o token existe
         const token = localStorage.getItem('token');
-        // if (!token) {
-        //     throw new Error('Usuário não autenticado. Faça login novamente.');
-        // }
-
-        // 2. Valida o formulário
         const form = document.getElementById('formPedido');
         if (!form) throw new Error('Formulário não encontrado.');
 
-        // 3. Prepara os dados do pedido
-        const clienteInput = form.querySelector('input[name="nome_cliente"]');
-        const clienteOption = document.querySelector(`#clientes-list option[value="${clienteInput.value}"]`);
-        // if (!clienteOption) throw new Error('Selecione um cliente válido.');
+        // Obtém o cliente do select
+        const selectCliente = document.getElementById('select-cliente');
+        if (!selectCliente || !selectCliente.value) {
+            throw new Error('Selecione um cliente válido.');
+        }
+
+        const selectedOption = selectCliente.options[selectCliente.selectedIndex];
+        const cliente = JSON.parse(selectedOption.dataset.cliente);
 
         const itens = Array.from(document.querySelectorAll('.info-produtos'))
-        .map(linha => {
-            const select = linha.querySelector('.select-produto');
-            const quantidadeInput = linha.querySelector('.quantidade-produto');
-    
-            if (!select || !quantidadeInput || !select.selectedOptions[0]) {
-                console.warn('Elemento select ou quantidade não encontrado ou inválido em uma linha.');
-                return null; // Ignora essa linha
-            }
-    
-            return {
-                idProduto: select.value,
-                quantidade: parseFloat(quantidadeInput.value),
-                precoUnitario: parseFloat(select.selectedOptions[0].dataset.preco)
-            };
-        })
-        .filter(item => item && item.idProduto && !isNaN(item.quantidade) && item.quantidade > 0);
-    
+            .map(linha => {
+                const select = linha.querySelector('.select-produto');
+                const quantidadeInput = linha.querySelector('.quantidade-produto');
+
+                if (!select || !quantidadeInput || !select.value) return null;
+
+                return {
+                    idProduto: select.value,
+                    quantidade: parseFloat(quantidadeInput.value) || 0,
+                    precoUnitario: parseFloat(select.selectedOptions[0].dataset.preco) || 0
+                };
+            })
+            .filter(item => item && item.idProduto && !isNaN(item.quantidade) && item.quantidade > 0);
 
         if (itens.length === 0) throw new Error('Adicione pelo menos um produto válido.');
 
-        // 4. Faz a chamada à API
-        const response = await fetch(`${API_URL}/api/pedidos`, {  
+        const response = await fetch(`${API_URL}/api/pedidos`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                idPessoa: clienteOption.dataset.id,
+                idPessoa: cliente.ID_PESSOA_PK, // Usa o ID do cliente do dataset
                 listaItens: itens,
                 formaPgto: form.querySelector('select[name="forma_pagamento"]').value,
                 parcelas: parseInt(form.querySelector('input[name="parcelas"]').value) || 1
             })
         });
 
-        // 5. Verifica se a resposta é JSON (evita o erro "Unexpected token '<'")
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            const errorText = await response.text();
-            console.error('Resposta não-JSON do servidor:', errorText);
-            throw new Error('Resposta inválida do servidor. Tente novamente.');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.message || 'Erro ao registrar pedido.');
         }
 
-        const resultado = await response.json();
-
-        // 6. Verifica se houve erro na API (mesmo com status 200)
-        if (!response.ok || resultado.error) {
-            throw new Error(resultado.message || 'Erro ao registrar pedido.');
-        }
-
-        // 7. Sucesso!
-        alert(`Pedido criado com sucesso!`);
-        form.reset();
-
+        return await response.json();
     } catch (error) {
         console.error('Erro no emitir pedido:', error);
-        alert('Erro: ' + error.message);
+        throw error;
     }
 }
 
 function formatarDocumento(doc) {
     if (!doc) return '';
     const numeros = doc.replace(/\D/g, '');
-    
+
     if (numeros.length === 11) {
         return numeros.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     } else if (numeros.length === 14) {
@@ -371,7 +405,7 @@ function formatarDocumento(doc) {
 function formatarTelefone(telefone) {
     if (!telefone) return '';
     const numeros = telefone.replace(/\D/g, '');
-    
+
     if (numeros.length === 11) {
         return numeros.replace(/(\d{2})(\d{1})(\d{4})(\d{4})/, '($1) $2 $3-$4');
     } else if (numeros.length === 10) {
@@ -388,11 +422,11 @@ function formatarMoeda(valor) {
 }
 
 function mostrarErro(mensagem) {
-    alert(mensagem); 
+    alert(mensagem);
 }
 
 function mostrarSucesso(mensagem) {
-    alert(mensagem); 
+    alert(mensagem);
 }
 
 window.removerProduto = removerProduto;
