@@ -26,7 +26,7 @@ const validarPedido = (req, res, next) => {
 router.get('/', async (req, res) => {
     const connection = await pool.getConnection();
     try {
-        const [rows] = await connection.execute('SELECT * FROM pedidos'); 
+        const [rows] = await connection.execute('SELECT * FROM pedido'); 
 
         res.status(200).json({
             success: true,
