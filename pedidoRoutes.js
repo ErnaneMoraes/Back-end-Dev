@@ -22,7 +22,27 @@ const validarPedido = (req, res, next) => {
 
     next();
 };
+//ernane aqui... adicionada rota get para pedidos
+router.get('/', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const [rows] = await connection.execute('SELECT * FROM pedidos'); 
 
+        res.status(200).json({
+            success: true,
+            data: rows // ou todosOsPedidos
+        });
+    } catch (error) {
+        console.error('Erro ao listar pedidos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao listar pedidos'
+        });
+    } finally {
+        connection.release();
+    }
+});
+//------------------final----------
 router.post('/', validarPedido, async (req, res) => {
     const connection = await pool.getConnection();
     try {
