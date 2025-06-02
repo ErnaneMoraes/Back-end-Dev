@@ -166,17 +166,29 @@ class Item {
 
         const connection = await pool.getConnection();
         try {
-            const [result] = await connection.execute(
-                'DELETE FROM tb_produto WHERE ID_PRODUTO_PK = ?',
-                [this.idProduto]
-            );
+            // Iniciar transação
+            await connection.beginTransaction();
+
+            // 1. Atualizar registros associados na tb_pedido para NULL
+            // Certifique-se que a coluna ID_PRODUTO_FK em tb_pedido permite valores NULL.
+            const updatePedidosQuery = 'UPDATE tb_pedido SET ID_PRODUTO_FK = NULL WHERE ID_PRODUTO_FK = ?';
+            await connection.execute(updatePedidosQuery, [this.idProduto]);
+
+            // 2. Excluir o produto da tb_produto
+            const deleteProdutoQuery = 'DELETE FROM tb_produto WHERE ID_PRODUTO_PK = ?';
+            const [result] = await connection.execute(deleteProdutoQuery, [this.idProduto]);
+
+            // Confirmar transação
+            await connection.commit();
 
             return result.affectedRows > 0;
         } catch (error) {
-            console.error('Erro ao deletar item:', error);
+            // Se ocorrer qualquer erro, reverter a transação
+            if (connection) await connection.rollback();
+            console.error('Erro ao deletar item e desassociar pedidos:', error);
             throw error;
         } finally {
-            connection.release();
+            if (connection) connection.release();
         }
     }
 }

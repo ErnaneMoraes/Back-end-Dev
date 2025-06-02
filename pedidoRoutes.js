@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Pedido = require('./src/models/Pedido');
+const Pedido = require('./src/models/Pedido'); // Certifique-se que o caminho está correto
 const { pool } = require('./database');
 
 const validarPedido = (req, res, next) => {
@@ -22,6 +22,61 @@ const validarPedido = (req, res, next) => {
 
     next();
 };
+
+// Rota GET /api/pedidos MODIFICADA para incluir detalhes do cliente e produto
+router.get('/', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const query = `
+            SELECT
+                ped.ID_PEDIDO_PK,
+                ped.QUANTIDADE,
+                ped.SUBTOTAL,
+                ped.FORMA_PGTO,
+                ped.PARCELAS,
+                ped.VENCIMENTO,
+                ped.TOTAL,
+                ped.ID_PESSOA_FK,  -- Mantendo para referência, se necessário
+                ped.ID_PRODUTO_FK, -- Mantendo para referência, se necessário
+                -- Dados do Cliente (da tabela tb_pessoa)
+                pessoa.NOME AS NOME_CLIENTE,
+                pessoa.CPF_CNPJ AS CPF_CNPJ_CLIENTE,
+                pessoa.CELULAR AS CELULAR_CLIENTE,
+                pessoa.RUA AS RUA_CLIENTE,
+                pessoa.NUMERO AS NUMERO_CLIENTE,
+                pessoa.UF AS UF_CLIENTE,
+                pessoa.CIDADE AS CIDADE_CLIENTE,
+                -- Dados do Produto (da tabela tb_produto)
+                produto.nome AS NOME_PRODUTO 
+                -- Se você tiver um campo de DESCONTO na tb_pedido, adicione-o aqui:
+                -- ped.DESCONTO (ou nome similar)
+            FROM
+                tb_pedido ped
+            LEFT JOIN
+                tb_pessoa pessoa ON ped.ID_PESSOA_FK = pessoa.ID_PESSOA_PK
+            LEFT JOIN
+                tb_produto produto ON ped.ID_PRODUTO_FK = produto.ID_PRODUTO_PK
+            ORDER BY
+                ped.ID_PEDIDO_PK DESC; -- Opcional: ordena pelos pedidos mais recentes
+        `;
+        
+        const [rows] = await connection.execute(query);
+
+        res.status(200).json({
+            success: true,
+            data: rows
+        });
+    } catch (error) {
+        console.error('Erro ao listar pedidos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao listar pedidos'
+        });
+    } finally {
+        connection.release();
+    }
+});
+//------------------final da modificação da rota GET / ------------------
 
 router.post('/', validarPedido, async (req, res) => {
     const connection = await pool.getConnection();
@@ -60,6 +115,8 @@ router.get('/:id', async (req, res) => {
     const connection = await pool.getConnection();
     try {
         const { id } = req.params;
+        // TODO: Considerar se esta rota também precisa de JOINs para detalhes ou se o modelo Pedido.consultarPedido(id) já faz isso.
+        // Por agora, esta rota não foi alterada.
         const pedido = new Pedido(connection);
         const dadosPedido = await pedido.consultarPedido(id);
 

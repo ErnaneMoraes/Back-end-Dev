@@ -1,0 +1,17 @@
+### Configurações globais
+@baseUrl = https://sistema-araleve.onrender.com
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6MSwiaWF0IjoxNzQ4ODAwMjU4LCJleHAiOjE3NDg4NDM0NTh9.M6NvEAz3_jN7r3KeA0lChEaFHNH50O_KhYTzzaaaze8
+
+### Teste de Login
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+    "login": "ernane",
+    "senha": "Unileste"
+}
+
+### Teste GET para /api/pedidos
+GET {{baseUrl}}/api/pedidos
+Content-Type: application/json
+x-access-token: {{token}}

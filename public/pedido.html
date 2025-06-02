@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -8,14 +9,15 @@
     <link rel="stylesheet" href="css/pedidos.css">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/popUp.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" 
-        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Ysabeau+Infant&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
     <title>Pedidos</title>
 </head>
+
 <body>
     <!-- Insere a sidebar na página -->
     <script>
@@ -73,8 +75,9 @@
                         <div class="info-produtos">
                             <div class="campo-cad tamanho-personalizado">
                                 <label>Nome Completo</label>
-                                <input type="text" name="nome_cliente" placeholder="Digite o nome completo do cliente" required>
-                                <datalist id="clientes-list"></datalist>
+                                <select id="select-cliente" name="cliente" required>
+                                    <option value="">Carregando clientes...</option>
+                                </select>
                             </div>
                             <div class="campo-cad">
                                 <label>Celular</label>
@@ -119,15 +122,18 @@
                                 </div>
                                 <div class="campo-cad">
                                     <label>Quantidade</label>
-                                    <input type="number" name="quantidade[]" placeholder="Ex.: 10 UN" min="1" class="quantidade-produto">
+                                    <input type="number" name="quantidade[]" placeholder="Ex.: 10 UN" min="1"
+                                        class="quantidade-produto">
                                 </div>
                                 <div class="campo-cad">
                                     <label>Desconto</label>
-                                    <input type="text" name="desconto[]" placeholder="Ex.: R$ 5.00,00" class="desconto-produto">
+                                    <input type="text" name="desconto[]" placeholder="Ex.: R$ 5.00,00"
+                                        class="desconto-produto">
                                 </div>
                                 <div class="campo-cad">
                                     <label>Subtotal</label>
-                                    <input type="text" name="subtotal[]" placeholder="Ex.: R$ 10.00,00" readonly class="subtotal-produto">
+                                    <input type="text" name="subtotal[]" placeholder="Ex.: R$ 10.00,00" readonly
+                                        class="subtotal-produto">
                                 </div>
                                 <div class="container_novo_produto">
                                     <button type="button" class="add_produto">
@@ -188,21 +194,22 @@
     <script type="module" src="javascript/pedidos.js"></script>
     <script>
         // Configuração segura de event listeners
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Garante que os elementos existem antes de adicionar eventos
             const btnEmitir = document.querySelector('.btn_emitir');
             const btnConfirmar = document.querySelector('#popUp .btn_salvar');
-            
+
             if (btnEmitir) {
                 btnEmitir.addEventListener('click', validarPedido);
             }
-            
+
             if (btnConfirmar) {
                 btnConfirmar.addEventListener('click', confirmarPedido);
             }
         });
     </script>
 </body>
+
 </html>
 
 <!-- TesteLuan -->

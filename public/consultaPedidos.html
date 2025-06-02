@@ -79,7 +79,7 @@
                         <option value="cidade">Cidade</option>
                     </select>
                     <input type="text" id="buscar_pedidos" name="buscar_pedidos" placeholder="Digite sua busca...">
-                    <button onclick="abrirPopup()">Exportar Relatório</button>
+                    <button onclick="abrirPopup('exportar')">Exportar Relatório</button>
                 </div>
                 
                 <!-- Tabela de pedidos -->
@@ -201,7 +201,11 @@
         
     </main>
     
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="javascript/mascaras.js"></script> 
+
+
     <script src="javascript/script.js"></script>
-    <script src="javascript/pedidos.js"></script>
+    <script type="module" src="javascript/pedidos.js"></script>
 </body>
 </html>
