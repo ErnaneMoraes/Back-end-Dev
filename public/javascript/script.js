@@ -393,7 +393,8 @@ function adicionarProduto() {
     produtosContainer.appendChild(novoProduto);
 
     // Adiciona evento para remover o produto
-    novoProduto.querySelector(".remove_produto").addEventListener("click", function () {
+    novoProduto.querySelector(".remove_produto").addEventListener("click", function (e) {
+        e.stopPropagation(); // Impede a propagação do evento
         produtosContainer.removeChild(novoProduto);
     });
 }
