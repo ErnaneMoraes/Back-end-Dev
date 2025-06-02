@@ -20,13 +20,13 @@
     <!-- Insere a sidebar na página -->
     <script>
         fetch('sidebar.html')
-        .then(response => response.text())
-        .then(html => {
-            document.body.insertAdjacentHTML('afterbegin', html);
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('afterbegin', html);
 
-            // Agora que a sidebar foi carregada, adicionamos os eventos
-            adicionarEventosSidebar();
-        });
+                // Agora que a sidebar foi carregada, adicionamos os eventos
+                adicionarEventosSidebar();
+            });
     </script>
     <main>
         <header>
