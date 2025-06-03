@@ -94,7 +94,7 @@ x-access-token: {{token}}
 }
 
 ### Agora pode deletar
-DELETE {{baseUrl}}/17
+DELETE {{baseUrl}}/28
 Content-Type: application/json
 x-access-token: {{token}}
 
