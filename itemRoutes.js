@@ -178,11 +178,15 @@ router.delete('/:id', async (req, res) => {
 
         // Verifica se há estoque antes de deletar
         if (itemExistente.quantidade > 0) {
+            // Loga a mensagem no console do servidor
+            console.log("Não é possível deletar um item com estoque positivo!"); 
+            
+            // Retorna uma resposta JSON para o cliente com o status 400
             return res.status(400).json({
                 success: false,
-                message: 'Não é possível deletar um item com estoque positivo'
+                message: 'Não é possível deletar um item com estoque positivo!' 
             });
-        }
+}
 
         const sucesso = await itemExistente.deletar();
         
