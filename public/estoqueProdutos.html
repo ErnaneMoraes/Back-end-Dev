@@ -83,8 +83,8 @@
                         <button id="remover" class="btn_remover" type="reset">Excluir</button>
                     
                         <!-- Botão Atualizar (passando o ID do produto) -->
-                        <button class="btn_editar" onclick="abrirPopUp('atualizar', 5)">Atualizar</button>
-                    
+                        <button class="btn_editar" >Atualizar</button>
+                        <!-- onclick="abrirPopUp('atualizar', 5)"-->
                         <!-- Botão Novo -->
                         <a href="cad_produto.html"><button class="btn_salvar" >Novo</button></a>
                     </div>
@@ -183,7 +183,7 @@
                             <input type="number" id="editar-quantidade" required>
                             <div class="popup-botoes">
                                 <button type="submit" class="btn_salvar">Salvar</button>
-                                <button type="button" class="btn_remover" onclick="fecharPopUp()">Cancelar</button>
+                                <button type="button" class="btn_remover" onclick="fecharPopUpEd()">Cancelar</button>
                 	        </div>
                         </form>
                     </div>
@@ -192,7 +192,7 @@
             </div>
         </div>
     </main>
-    <script src="javascript/script.js"></script>
+   <!-- <script src="javascript/script.js"></script>-->
     <script type="module" src="javascript/frontProdutos.js"></script>
 </body>
 </html>

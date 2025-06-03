@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnCadastrar.addEventListener("click", async function (event) {
             event.preventDefault();
 
-            const token = getToken(); 
+            const token = getToken();
             if (!token) return;
 
             const nome_produto = document.querySelector("input[name='nome_produto']").value.trim();
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.ok && data?.sucesso) {
                     alert("Produto cadastrado com sucesso!");
-                    document.getElementById("popUp").style.display = "none";
+                    document.getElementById("popUpProduto").style.display = "none";
                     carregarItens(); // Recarrega a lista de produtos
                 } else {
                     alert(data?.mensagem || "Erro ao cadastrar o produto.");
@@ -62,9 +62,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (btnFecharPopup) {
         btnFecharPopup.addEventListener("click", function () {
-            document.getElementById("popUp").style.display = "none";
+            document.getElementById("popUpProduto").style.display = "none";
         });
     }
+
+    function fecharPopUpCadastro() {
+    const popUpElement = document.getElementById("popUpProduto");
+    if (popUpElement) {
+        popUpElement.style.display = "none";
+    }
+}
 
     // ===================== CARREGAMENTO DA TABELA ======================
 
@@ -129,19 +136,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnRemover) {
         btnRemover.addEventListener('click', async function() {
             const checkboxes = document.querySelectorAll('.checkbox-item:checked');
-            
+
             if (checkboxes.length === 0) {
                 alert('Selecione pelo menos um item para remover');
                 return;
             }
-            
+
             if (!confirm(`Deseja realmente remover ${checkboxes.length} item(ns)?`)) {
                 return;
             }
-            
+
             try {
                 const ids = Array.from(checkboxes).map(cb => cb.getAttribute('data-id'));
-                
+
                 for (const id of ids) {
                     const response = await fetch(`${API_URL}/api/itens/${id}`, {
                         method: 'DELETE',
@@ -149,12 +156,12 @@ document.addEventListener("DOMContentLoaded", () => {
                             'x-access-token': token
                         }
                     });
-                    
+
                     if (!response.ok) {
                         throw new Error(`Erro ao remover item ${id}`);
                     }
                 }
-                
+
                 alert('Itens removidos com sucesso!');
                 carregarItens(); // Recarrega a tabela
             } catch (error) {
@@ -183,69 +190,79 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    
+
     // function abrirPopUp(tipo, idProduto = null) {
     //     console.log(`Abrir popup para ${tipo} com ID: ${idProduto}`);
     //     // Aqui você pode implementar abrir modal, editar ou cadastrar o produto.
     // }
 
-    async function abrirPopUp(tipo, idProduto = null) {
-        const popup = document.getElementById('popup-edicao');
-        const titulo = document.getElementById('popup-titulo');
-        const formEditar = document.getElementById('form-editar'); // Referência ao formulário
+   async function abrirPopUp(tipo, idProduto = null) {
+    const popup = document.getElementById('popup-edicao');
+    const titulo = document.getElementById('popup-titulo');
+    const formEditar = document.getElementById('form-editar'); 
 
-        // Modo NOVO produto
-        if (tipo === 'novo') {
-            titulo.textContent = 'Novo Produto';
-            formEditar.reset(); // Reseta todos os campos do formulário
-            document.getElementById('editar-idProduto').value = ''; // Limpa o ID, garantindo que é novo
-            popup.style.display = 'block';
-            return;
-        }
+    // Garante que o formulário seja sempre resetado ao abrir o pop-up,
+    // seja para novo produto ou para carregar dados de edição (para limpar campos de uma edição anterior)
+    formEditar.reset(); 
+    document.getElementById('editar-idProduto').value = ''; // Sempre limpa o ID oculto inicialmente
 
-        // Modo EDIÇÃO (busca dados da API)
-        titulo.textContent = 'Editar Produto';
-        try {
-            // Faz a requisição para obter os dados do produto específico
-            const response = await fetch(`${API_URL}/api/itens/${idProduto}`, {
-                headers: { 'x-access-token': getToken() }
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Erro ao buscar dados do produto.');
-            }
-
-            const produto = await response.json();
-            
-            // Log para depuração: verifique o que a API retorna
-            console.log('Dados do produto recebidos para edição:', produto);
-            
-            // Preenche os campos do formulário com os dados do produto
-            document.getElementById('editar-idProduto').value = produto.idProduto || '';
-            document.getElementById('editar-tag').value = produto.tag || '';
-            document.getElementById('editar-nome').value = produto.nome || '';
-            document.getElementById('editar-descricao').value = produto.descricao || '';
-            document.getElementById('editar-medida').value = produto.medida || 'un';
-            // Garante que o valor do preço é um número e formatado para o campo de entrada
-            document.getElementById('editar-precoVenda').value = (produto.precoVenda != null ? Number(produto.precoVenda) : 0).toFixed(2);
-            document.getElementById('editar-quantidade').value = produto.quantidade != null ? parseInt(produto.quantidade) : 0;
-            
-            // Exibe o pop-up
-            popup.style.display = 'block';
-        } catch (error) {
-            alert(`Erro ao carregar produto para edição: ${error.message}`);
-            console.error('Erro ao carregar produto para edição:', error);
-        }
+    // Modo NOVO produto
+    if (tipo === 'novo') {
+        titulo.textContent = 'Novo Produto';
+        popup.style.display = 'block'; // Exibe o pop-up
+        return; // Sai da função, pois não há dados para carregar
     }
+
+    // Se não for 'novo', então é modo EDIÇÃO (assume-se 'editar' ou 'atualizar')
+    titulo.textContent = 'Editar Produto';
+    if (!idProduto) {
+        // Isso não deveria acontecer se o seu EventListener estiver validando corretamente,
+        // mas é um bom "fail-safe"
+        alert('Erro: ID do produto não fornecido para edição.');
+        console.error('ID do produto é nulo para edição.');
+        return; 
+    }
+
+    try {
+        // Faz a requisição para obter os dados do produto específico
+        const response = await fetch(`${API_URL}/api/itens/${idProduto}`, {
+            headers: { 'x-access-token': getToken() }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Erro ao buscar dados do produto.');
+        }
+
+        const responseData = await response.json();
+        const produto = responseData.data;
+        
+        // Log para depuração: verifique o que a API retorna
+        console.log('Dados do produto recebidos para edição:', produto);
+        
+        // Preenche os campos do formulário com os dados do produto
+        document.getElementById('editar-idProduto').value = produto.idProduto || '2';
+        document.getElementById('editar-tag').value = produto.tag || '';
+        document.getElementById('editar-nome').value = produto.nome || '';
+        document.getElementById('editar-descricao').value = produto.descricao || '';
+        document.getElementById('editar-medida').value = produto.medida || 'un';
+        document.getElementById('editar-precoVenda').value = (produto.precoVenda != null ? Number(produto.precoVenda) : 0).toFixed(2);
+        document.getElementById('editar-quantidade').value = produto.quantidade != null ? parseInt(produto.quantidade) : 0;
+        
+        // Exibe o pop-up
+        popup.style.display = 'block';
+    } catch (error) {
+        alert(`Erro ao carregar produto para edição: ${error.message}`);
+        console.error('Erro ao carregar produto para edição:', error);
+    }
+}
 
     // Fechar pop-up
-    function fecharPopUp() {
+    function fecharPopUpEd() {
         document.getElementById('popup-edicao').style.display = 'none';
         // Opcional: resetar o formulário ao fechar, embora já seja feito ao abrir para "novo"
-        document.getElementById('form-editar').reset(); 
+        document.getElementById('form-editar').reset();
     }
-
 
     carregarItens();
 });
