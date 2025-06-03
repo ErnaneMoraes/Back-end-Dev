@@ -1,6 +1,6 @@
 import { API_URL } from './api.js';
 
-console.log("API_URL utilizada em frontProdutos.js:", API_URL);
+//console.log("API_URL utilizada em frontProdutos.js:", API_URL);
 
 document.addEventListener("DOMContentLoaded", () => {
     const tabelaEstoque = document.getElementById('tabela-estoqueProdutos');
