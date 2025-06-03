@@ -255,8 +255,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify(dadosProduto)
                 });
 
-                const data = await response.json(); // Tenta parsear a resposta mesmo se não for OK, para obter a mensagem
-                if (response.ok && data?.sucesso) { // Supondo que sua API retorna { sucesso: true, ... }
+                const data = await response.json(); 
+                if (response.ok && data?.success) {  
                     alert('Produto atualizado com sucesso!');
                     editProductPopup.style.display = 'none';
                     carregarItens();
