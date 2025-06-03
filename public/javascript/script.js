@@ -1,442 +1,330 @@
 // Desconectando do site
 function logout() {
-    localStorage.removeItem('token');
+    localStorage.removeItem('jwtToken'); // Alterado de 'token' para 'jwtToken' para consistência
     window.location.href = 'index.html';
 }
 
 // Função para adicionar eventos ao botão da sidebar
 function adicionarEventosSidebar() {
-    // Deixando o menu sidebar dinâmico
-    document.getElementById('open_btn').addEventListener('click', function() {
-        document.getElementById('sidebar').classList.toggle('open-sidebar');
-    });
+    const openBtn = document.getElementById('open_btn');
+    const sidebar = document.getElementById('sidebar');
+    if (openBtn && sidebar) {
+        openBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('open-sidebar');
+        });
+    } else {
+        console.warn("Botão de abrir sidebar ou a própria sidebar não encontrados para adicionar eventos.");
+    }
 }
 
+// As funções abaixo (abrirPopUp, fecharPopUp, window.onclick para #popUp)
+// referem-se a um popup genérico com id="popUp".
+// Se este popup não existe ou não é mais usado, estas funções podem ser removidas
+// para evitar confusão com a lógica em popUp.js que lida com #popUpProduto.
 
-// Chama a função ao carregar a página
-//document.addEventListener("DOMContentLoaded", destacarPaginaAtiva);
-
-// Executa a função após carregar a sidebar
-//document.addEventListener("DOMContentLoaded", destacarPaginaAtual);
-
-
-
-// Exibindo pop up na tela de cadastro de produtos
+// Exibindo pop up genérico (NÃO usado por cad_produto.html diretamente)
 function abrirPopUp() {
-    document.getElementById("popUp").style.display = "block";
+    const genericPopUp = document.getElementById("popUp");
+    if (genericPopUp) {
+        genericPopUp.style.display = "block";
+    } else {
+        console.warn("Tentativa de abrir popUp genérico (id='popUp'), mas não foi encontrado.");
+    }
 }
 
 function fecharPopUp() {
-    document.getElementById("popUp").style.display = "none";
-}
-
-// Fechar ao clicar fora do modal
-window.onclick = function(event) {
-    let modal = document.getElementById("popUp");
-    if (event.target === modal) {
-        modal.style.display = "none";
+    const genericPopUp = document.getElementById("popUp");
+    if (genericPopUp) {
+        genericPopUp.style.display = "none";
     }
 }
 
-// Destacando linhas selecionadas na tabela pedidos
-// O código só será executado depois que toda a estrutura HTML estiver carregada no navegador.
-// Isso garante que os elementos da página estejam acessíveis pelo JavaScript
-document.addEventListener("DOMContentLoaded", function () {
-
-    // selecionamos todos os checkboxes da página e armazenamos em checkboxes.
-    const checkboxes = document.querySelectorAll(".checkbox");
-    // Adicionamos um ouvinte de evento change no document. 
-    // Isso é chamado quando qualquer checkbox da página for alterado.
-    document.addEventListener("change", function(event) {
-        // captura o elemento específico que foi alterado.
-        const target = event.target;
-
-        // target.matches(".checkbox"): Verifica se o elemento alterado é um checkbox.
-        // target.id !== "selecionar-todos": Garante que o evento só afete os checkboxes
-        // das linhas da tabela, ignorando o checkbox "Selecionar Todos".
-        if (target.matches(".checkbox") && target.id !== "selecionar-todos") {
-
-            // Encontra a <tr> (linha da tabela) mais próxima do checkbox clicado.
-            let linha = target.closest("tr");
-
-            // Chama a função linhaHasData() para verificar se a linha contém informações válidas.
-            // Se a linha tem dados, a classe selecionado é adicionada ou removida,
-            // dependendo do estado do checkbox (target.checked).
-            if (linhaHasData(linha)) {
-                linha.classList.toggle("selecionado", target.checked);
-            } else {
-                // Se a linha estiver vazia, o checkbox é imediatamente desmarcado 
-                // para evitar seleção de linhas vazias.
-                target.checked = false;
-            }
-
-            // Após qualquer mudança, chamamos atualizarSelecionarTodos() para verificar
-            // se todos os checkboxes das linhas preenchidas estão marcados e atualizar 
-            //o checkbox "Selecionar Todos" corretamente.
-            atualizarSelecionarTodos();
-        }
-    });
-
-    // Selecionar Todos (Apenas Linhas Preenchidas)
-    const selecionarTodos = document.getElementById("selecionar-todos");
-    selecionarTodos.addEventListener("change", function () {
-        // recebe true se o usuário marcou "Selecionar Todos", ou false se desmarcou.
-        const isChecked = this.checked;
-        // Percorremos todos os checkboxes da tabela.
-        // Para cada um, encontramos a linha correspondente (linha.closest("tr")).
-        // Se a linha tiver dados (linhaHasData(linha)):
-        // O checkbox da linha é marcado/desmarcado com isChecked.
-        // A classe selecionado é adicionada/removida para destacar visualmente.
-        checkboxes.forEach(checkbox => {
-            let linha = checkbox.closest("tr");
-
-            if (linhaHasData(linha)) {
-                checkbox.checked = isChecked;
-                linha.classList.toggle("selecionado", isChecked);
-            }
-        });
-    });
-
-    // Função para verificar se uma linha tem dados preenchidos
-    function linhaHasData(linha) {
-        // Seleciona todas as células <td> da linha, exceto a do checkbox (td:not(.checkbox-check)).
-        const celulas = linha.querySelectorAll("td:not(.checkbox-check)"); // Ignora o checkbox
-        // Usa .some() para verificar se pelo menos uma célula tem texto diferente de vazio ("").
-        return Array.from(celulas).some(td => td.textContent.trim() !== ""); // Retorna true se houver conteúdo
-    }
-
-    // Atualizar "Selecionar Todos" com base na seleção manual
-    function atualizarSelecionarTodos() {
-        // Converte checkboxes em um array (Array.from(checkboxes)).
-        // Usa .filter() para manter apenas os checkboxes que:
-        // Estão marcados (checkbox.checked).
-        // Pertencem a uma linha preenchida (linhaHasData(checkbox.closest("tr"))).
-        const checkboxesMarcados = Array.from(checkboxes).filter(checkbox => checkbox.checked && linhaHasData(checkbox.closest("tr")));
-        // Se o número de checkboxes marcados for igual ao número de linhas na tabela (tbody tr), significa que todas as linhas preenchidas
-        // estão selecionadas, então "Selecionar Todos" deve ficar marcado.
-        // Caso contrário, ele fica desmarcado.
-        const linhasPreenchidas = Array.from(document.querySelectorAll("tbody tr")).filter(linhaHasData);
-        selecionarTodos.checked = checkboxesMarcados.length === linhasPreenchidas.length;
-        //selecionarTodos.checked = checkboxesMarcados.length === document.querySelectorAll("tbody tr").length;
+// Fechar popUp genérico ao clicar fora do modal
+window.addEventListener('click', function(event) {
+    let genericPopUp = document.getElementById("popUp");
+    if (genericPopUp && event.target === genericPopUp) {
+        genericPopUp.style.display = "none";
     }
 });
+
+
+// ---- INÍCIO DO CÓDIGO PROVAVELMENTE PARA OUTRAS PÁGINAS (EX: CONSULTA DE PEDIDOS/PRODUTOS) ----
+// O código abaixo parece ser para tabelas com checkboxes e filtros,
+// não diretamente relacionado ao formulário de cadastro de produto.
+
+document.addEventListener("DOMContentLoaded", function () {
+    const checkboxes = document.querySelectorAll("#tabela-pedidos .checkbox, #tabela-estoqueProdutos .checkbox"); // Generalizado para tabelas comuns
+    const selecionarTodos = document.getElementById("selecionar-todos");
+
+    if (checkboxes.length > 0) { // Só adiciona listeners se houver checkboxes de item
+        document.addEventListener("change", function(event) {
+            const target = event.target;
+            if (target.matches(".checkbox") && target.id !== "selecionar-todos") {
+                let linha = target.closest("tr");
+                if (linha && linhaHasData(linha)) { // Verifica se linha não é null
+                    linha.classList.toggle("selecionado", target.checked);
+                } else if (linha) { // Se linha existe mas está vazia
+                    target.checked = false;
+                }
+                if (selecionarTodos) atualizarSelecionarTodos(selecionarTodos, checkboxes); // Passa referências
+            }
+        });
+    }
+
+    if (selecionarTodos) {
+        selecionarTodos.addEventListener("change", function () {
+            const isChecked = this.checked;
+            checkboxes.forEach(checkbox => {
+                let linha = checkbox.closest("tr");
+                if (linha && linhaHasData(linha)) { // Verifica se linha não é null
+                    checkbox.checked = isChecked;
+                    linha.classList.toggle("selecionado", isChecked);
+                } else if (linha) { // Linha vazia, não deve ser selecionada por "selecionar todos"
+                    checkbox.checked = false; 
+                    linha.classList.remove("selecionado");
+                }
+            });
+        });
+    }
+});
+
+// Função para verificar se uma linha tem dados preenchidos
+function linhaHasData(linha) {
+    if (!linha) return false; // Checagem de segurança
+    const celulas = linha.querySelectorAll("td:not(.checkbox-check)");
+    return Array.from(celulas).some(td => td.textContent.trim() !== "");
+}
+
+// Atualizar "Selecionar Todos" com base na seleção manual
+function atualizarSelecionarTodos(selecionarTodosCheckbox, checkboxesItens) {
+    if (!selecionarTodosCheckbox) return; // Checagem de segurança
+    const linhasPreenchidasComCheckbox = Array.from(checkboxesItens).filter(cb => {
+        const linha = cb.closest("tr");
+        return linha && linhaHasData(linha) && !cb.disabled; // Considera apenas checkboxes habilitados
+    });
+    const checkboxesMarcadosEmLinhasPreenchidas = linhasPreenchidasComCheckbox.filter(cb => cb.checked);
+    
+    if (linhasPreenchidasComCheckbox.length > 0) {
+        selecionarTodosCheckbox.checked = checkboxesMarcadosEmLinhasPreenchidas.length === linhasPreenchidasComCheckbox.length;
+    } else {
+        selecionarTodosCheckbox.checked = false; // Nenhuma linha preenchida para selecionar
+    }
+}
+
 
 // Adicionar a função de filtragem no JavaScript
 document.addEventListener("DOMContentLoaded", function () {
-    const inputFiltro = document.getElementById("buscar_pedidos"); // Campo de filtro
-    const selectColuna = document.getElementById("coluna-filtro"); // Dropdown para escolher a coluna
-    const tabelaPedidos = document.getElementById("tabela-pedidos"); // Tabela onde as linhas são geradas dinamicamente
+    const inputFiltro = document.getElementById("buscar_pedidos");
+    const selectColuna = document.getElementById("coluna-filtro");
+    // Generalizar para qualquer tabela que use este filtro, se necessário.
+    // Por enquanto, assume que #tabela-pedidos ou #tabela-estoqueProdutos existe.
+    const tabelaAlvo = document.getElementById("tabela-pedidos") || document.getElementById("tabela-estoqueProdutos")?.querySelector("tbody");
 
-    // Mapeamento dos índices reais da tabela
-    const indiceColunas = {
-        "nome": 2, // Nome está na 3ª coluna (índice 2)
-        "cpf_cnpj": 3, // cpf_cnpj está na 4ª coluna (índice 3)
-        "UF": 7, // UF está na 5ª coluna (índice 7)
-        "cidade": 8 // cidade está na 6ª coluna (índice 8)
+
+    // Mapeamento dos índices para diferentes tabelas/contextos
+    // Este mapeamento pode precisar ser ajustado ou tornado mais dinâmico
+    // se usado em várias tabelas com estruturas diferentes.
+    const indiceColunasProduto = { // Para frontProdutos.js
+        "tag": 2, // TAG na 3ª coluna (índice 2)
+        "nome": 3, // Nome produto na 4ª coluna (índice 3)
+        // "UF": indefinido para produtos
+        // "cidade": indefinido para produtos
+    };
+    const indiceColunasPedido = { // Para uma hipotética tabela de pedidos
+        "nome": 2, 
+        "cpf_cnpj": 3,
+        "UF": 7, 
+        "cidade": 8 
     };
 
-
-    inputFiltro.addEventListener("input", function () {
-        // Obtém o texto digitado e converte para minúsculas
-        const termo = inputFiltro.value.toLowerCase().trim();
-        const colunaSelecionada = selectColuna.value; // Nome da coluna no mapeamento
-        const colunaIndex = indiceColunas[colunaSelecionada]; // Índice da coluna selecionada
-
-        // Pega todas as linhas da tabela
-        const linhas = tabelaPedidos.querySelectorAll("tr");
-
-        linhas.forEach(linha => {
-
-            // Pega todo o texto da linha
-            //const textoLinha = linha.textContent.toLowerCase();
-            const celulas = linha.querySelectorAll("td"); // Pega todas as células da linha
-            const checkbox = linha.querySelector(".checkbox"); // Verifica se há checkbox na linha
+    if (inputFiltro && selectColuna && tabelaAlvo) {
+        inputFiltro.addEventListener("input", function () {
+            const termo = inputFiltro.value.toLowerCase().trim();
+            const colunaSelecionada = selectColuna.value;
             
-            if (colunaIndex !== undefined && celulas[colunaIndex]) {
-                const textoCelula = celulas[colunaIndex].textContent.toLowerCase();
-
-                // Se o termo de busca estiver presente no texto da célula, exibe a linha
-                if (textoCelula.includes(termo)) {
-                    linha.style.display = "";
-                    if (checkbox) checkbox.disabled = false; // Garante que o checkbox não fique desabilitado
+            // Determinar qual mapeamento de índice usar (exemplo simples)
+            // Você pode precisar de uma lógica melhor se o filtro for genérico
+            let indiceColunasUsado = {};
+            if (document.title.includes("Cadastro de Produto") || document.title.includes("Estoque")) { // Exemplo de condição
+                indiceColunasUsado = indiceColunasProduto;
+            } else if (document.title.includes("Pedidos")) {
+                indiceColunasUsado = indiceColunasPedido;
+            } else { // Fallback ou lógica padrão
+                 // Se for a tabela de produtos de frontProdutos.js
+                if (tabelaAlvo.id === "tabela-estoqueProdutos" || tabelaAlvo.parentElement.id === "tabela-estoqueProdutos" ) {
+                    indiceColunasUsado = indiceColunasProduto;
                 } else {
-                    linha.style.display = "none";
-                    if (checkbox) checkbox.disabled = true; // Desabilita apenas visualmente, se necessário
+                    indiceColunasUsado = indiceColunasPedido; // Ou um default
                 }
             }
+
+            const colunaIndex = indiceColunasUsado[colunaSelecionada];
+            const linhas = tabelaAlvo.querySelectorAll("tr");
+
+            linhas.forEach(linha => {
+                const celulas = linha.querySelectorAll("td");
+                const checkbox = linha.querySelector(".checkbox");
+                
+                if (colunaIndex !== undefined && celulas.length > colunaIndex && celulas[colunaIndex]) {
+                    const textoCelula = celulas[colunaIndex].textContent.toLowerCase();
+                    if (textoCelula.includes(termo)) {
+                        linha.style.display = "";
+                        if (checkbox) checkbox.disabled = false;
+                    } else {
+                        linha.style.display = "none";
+                        if (checkbox) checkbox.disabled = true; 
+                    }
+                } else if (colunaIndex === undefined && termo === "") { // Mostrar tudo se filtro limpo e coluna não específica
+                    linha.style.display = "";
+                    if (checkbox) checkbox.disabled = false;
+                } else if (colunaIndex === undefined && termo !== "") { // Esconder se filtro tem termo mas coluna não é específica
+                     // Este comportamento pode precisar de ajuste: se filtrar por "todos os campos"
+                }
+            });
         });
-    });
-});
-
-//
-// Código JavaScript para inserir os dados na tabela
-// document.addEventListener("DOMContentLoaded", function () {
-//     const btnEmitir = document.querySelector(".btn_emitir");
-//     const form = document.querySelector("form");
-
-//     btnEmitir.addEventListener("click", function (event) {
-//         event.preventDefault(); // Evita recarregar a página
-
-//         // Capturar os valores do formulário
-//         const nome = form.nome_cliente.value.trim();
-//         const celular = form.num_celular.value.trim();
-//         const cpfCnpj = form.cpf_ou_cnpj.value.trim();
-//         const rua = form.nome_rua.value.trim();
-//         const numero = form.numero_casa.value.trim();
-//         const UF = form.UF.value.trim();
-//         const cidade = form.cidade.value.trim();
-//         const produto = form.nome_produto.value.trim();
-//         const quantidade = form.quantidade_produto.value.trim();
-//         const desconto = form.desconto.value.trim();
-//         const subtotal = form.subtotal.value.trim();
-//         const forma_pgto = form.forma_pagamento.value.trim();
-//         const parcelas = form.quantidade_parcelas.value.trim();
-//         const total = form.total_pagamento.value.trim();
-//         const dataVencimento = form.vencimento_pg.value.trim();
-
-//         // Verificar se os campos obrigatórios estão preenchidos
-//         if (
-//             !nome || !celular || !cpfCnpj || !rua || !numero || !cidade || !UF ||
-//             !produto || !quantidade || !desconto || !subtotal || !forma_pgto ||
-//             !parcelas || !total || !dataVencimento
-//         ) {
-//             alert("Preencha todos os campos obrigatórios!");
-//             return;
-//         }
-
-//         // Criar um ID aleatório para simular um pedido
-//         const pedidoID = Date.now();
-
-//         // Salvar os dados no localStorage (como um objeto)
-//         const pedido = {
-//             pedidoID,
-//             nome,
-//             celular,
-//             cpfCnpj,
-//             rua,
-//             numero,
-//             UF,
-//             cidade,
-//             produto,
-//             quantidade,
-//             desconto,
-//             subtotal,
-//             forma_pgto,
-//             parcelas,
-//             total,
-//             dataVencimento
-//         };
-
-//         // Recuperar pedidos existentes ou criar um novo array
-//         let pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
-//         pedidos.push(pedido);
-
-//         // Atualizar no localStorage
-//         localStorage.setItem('pedidos', JSON.stringify(pedidos));
-        
-//         // Resetar o formulário após a inserção
-//         form.reset();
-
-//         // Exibir uma mensagem de sucesso
-//         alert("Pedido salvo com sucesso!");
-//     });
-// });
-// //
-
-// // // Código para exibir os dados na tabela (consultasPedidos.html):
-// document.addEventListener("DOMContentLoaded", function () {
-//     const tabelaPedidos = document.getElementById("tabela-pedidos");
-
-//     // Recuperar os dados dos pedidos do localStorage
-//     const pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
-
-//     // Se existirem pedidos, adicioná-los na tabela
-//     pedidos.forEach(function(pedido) {
-//         const newRow = document.createElement("tr");
-
-//         newRow.innerHTML = `
-//             <td class="checkbox-check">
-//                 <input type="checkbox" class="checkbox">
-//             </td>
-//             <td>${pedido.pedidoID}</td> <!-- ID pode ser gerado automaticamente no futuro -->
-//             <td>${pedido.nome}</td>
-//             <td>${pedido.cpfCnpj}</td>
-//             <td>${pedido.celular}</td>
-//             <td>${pedido.rua}</td>
-//             <td>${pedido.numero}</td>
-//             <td>${pedido.UF}</td> 
-//             <td>${pedido.cidade}</td>
-//             <td>${pedido.produto}</td>
-//             <td>${pedido.quantidade}</td>
-//             <td>${pedido.desconto}</td>
-//             <td>${pedido.subtotal}</td>
-//             <td>${pedido.forma_pgto}</td>
-//             <td>${pedido.parcelas}</td>
-//             <td>${pedido.total}</td>
-//             <td>${pedido.dataVencimento}</td>
-//         `;
-
-//         // Adicionar a nova linha ao tbody da tabela
-//         tabelaPedidos.appendChild(newRow);
-//     });
-// })
-
-// Recuperação de senha
-document.addEventListener("DOMContentLoaded", function() {
-    const linkRecuperacao = document.querySelector(".esqueceu-senha a");
-    const formRecuperacao = document.getElementById("form-recuperacao");
-    const formLogin = document.getElementById("loginForm");
-    const btnCancelar = document.querySelector("#form-recuperacao button[type='button']");
-    
-    linkRecuperacao.addEventListener("click", function(event) {
-        event.preventDefault();
-        formLogin.style.display = "none";
-        formRecuperacao.style.display = "block";
-    });
-    
-    btnCancelar.addEventListener("click", function() {
-        formRecuperacao.style.display = "none";
-        formLogin.style.display = "block";
-    });
-});
-
-// Desconecta o usuário e retorna para a tela de login
-document.getElementById("logout_btn").addEventListener("click", function () {
-    if (confirm("Tem certeza que deseja sair?")) {
-        localStorage.clear(); // Limpa dados do usuário (se necessário)
-        window.location.href = "index.html"; // Redireciona para a tela de login
     }
 });
 
-// // Adicionando Tooltips nos links de navegação
-// document.addEventListener("DOMContentLoaded", function () {
-//     const sideLinks = document.querySelectorAll(".side-link");
 
-//     sideLinks.forEach(link => {
-//         const tooltipText = link.querySelector(".item-description")?.innerText.trim();
-
-//         if (tooltipText) {
-//             let tooltip; // Variável para armazenar a tooltip
-
-//             link.addEventListener("mouseenter", (e) => {
-//                 // Criar a tooltip apenas se ela não existir
-//                 if (!tooltip) {
-//                     tooltip = document.createElement("div");
-//                     tooltip.classList.add("tooltip");
-//                     tooltip.innerText = tooltipText;
-//                     document.body.appendChild(tooltip);
-//                 }
-
-//                 tooltip.style.display = "block";
-//                 tooltip.style.left = `${e.pageX + 10}px`;
-//                 tooltip.style.top = `${e.pageY}px`;
-//             });
-
-//             link.addEventListener("mousemove", (e) => {
-//                 if (tooltip) {
-//                     tooltip.style.left = `${e.pageX + 10}px`;
-//                     tooltip.style.top = `${e.pageY}px`;
-//                 }
-//             });
-
-//             link.addEventListener("mouseleave", () => {
-//                 if (tooltip) {
-//                     tooltip.remove(); // Remove a tooltip do DOM
-//                     tooltip = null; // Reseta a variável para evitar múltiplas criações
-//                 }
-//             });
-//         }
-//     });
-// });
-
-// Adicionando o evento click no botão para adicionar novo produto
+// Código para adicionar dinamicamente produtos a um formulário (ex: formulário de Pedido)
+// Não parece ser para a tela de CADASTRO DE PRODUTO individual.
 document.addEventListener("DOMContentLoaded", function () {
-    document.querySelector(".add_produto").addEventListener("click", function () {
-        adicionarProduto();
-    });
+    const addProdutoBtn = document.querySelector(".add_produto");
+    if (addProdutoBtn) {
+        addProdutoBtn.addEventListener("click", function () {
+            adicionarProdutoParaPedido(); // Renomeado para clareza
+        });
+    }
 });
 
-function adicionarProduto() {
-    let produtosContainer = document.getElementById("produtos-container");
+function adicionarProdutoParaPedido() { // Renomeado para clareza
+    let produtosContainer = document.getElementById("produtos-container"); // Este ID deve existir no HTML do formulário de pedido
+    if (!produtosContainer) {
+        console.warn("#produtos-container não encontrado para adicionar produto ao pedido.");
+        return;
+    }
 
     let novoProduto = document.createElement("div");
-    novoProduto.classList.add("info-produtos");
-
+    novoProduto.classList.add("info-produtos"); // Reutiliza a classe, mas pode precisar de CSS específico
     novoProduto.innerHTML = `
         <div class="campo-cad">
             <label>Produto</label>
-            <select name="nome_produto[]" required>
+            <select name="nome_produto_pedido[]" required> <option value="">Selecione...</option>
                 <option value="telha">Telha</option>
                 <option value="tijolo">Tijolo</option>
                 <option value="ferragem">Ferragem</option>
-            </select>
+                </select>
         </div>
         <div class="campo-cad">
             <label>Quantidade</label>
-            <input type="number" name="quantidade_produto[]" placeholder="Ex.: 10 UN" required>
-        </div>
+            <input type="number" name="quantidade_produto_pedido[]" placeholder="Ex.: 10" required> </div>
         <div class="campo-cad">
-            <label>Desconto</label>
-            <input type="text" name="desconto[]" placeholder="Ex.: R$ 5.00">
-        </div>
+            <label>Desconto (R$)</label>
+            <input type="number" step="0.01" name="desconto_pedido[]" placeholder="Ex.: 5.00"> </div>
         <div class="campo-cad">
-            <label>Subtotal</label>
-            <input type="text" name="subtotal[]" placeholder="Ex.: R$ 10.00">
-        </div>
+            <label>Subtotal (R$)</label>
+            <input type="number" step="0.01" name="subtotal_pedido[]" placeholder="Ex.: 10.00" readonly> </div>
         <div class="container_novo_produto">
-            <button class="remove_produto" type="button">
-                <img src="assets/excluir.png" alt="Remover produto">
+            <button class="remove_produto_pedido" type="button"> <img src="assets/excluir.png" alt="Remover produto">
             </button>
         </div>
     `;
-
     produtosContainer.appendChild(novoProduto);
-
-    // Adiciona evento para remover o produto
-    novoProduto.querySelector(".remove_produto").addEventListener("click", function () {
+    novoProduto.querySelector(".remove_produto_pedido").addEventListener("click", function () {
         produtosContainer.removeChild(novoProduto);
     });
 }
 
-
-
-// Função para editar o acesso dos usuários
+// Funções de edição/exclusão de linha e toggle de senha para tabelas (ex: tabela de usuários)
+// Não diretamente relacionadas ao cadastro de produto.
 function editarLinha(botao) {
     let linha = botao.closest('tr');
+    if (!linha) return;
     let editando = linha.dataset.editando === "true";
-
     if (!editando) {
-        linha.querySelectorAll('td[contenteditable]').forEach(td => td.contentEditable = "true");
-        botao.innerHTML = '<i class="fa fa-save"></i>';
+        linha.querySelectorAll('td[data-original]').forEach(td => { // Assume que o conteúdo original está em data-original
+            td.contentEditable = "true";
+            td.focus(); // Foca no primeiro campo editável
+        });
+        botao.innerHTML = '<i class="fa fa-save"></i> Salvar';
         linha.dataset.editando = "true";
     } else {
-        linha.querySelectorAll('td[contenteditable]').forEach(td => td.contentEditable = "false");
-        botao.innerHTML = '<i class="fa fa-edit"></i>';
+        linha.querySelectorAll('td[contenteditable="true"]').forEach(td => {
+            td.contentEditable = "false";
+            // Aqui você coletaria os dados e enviaria para a API
+            console.log(`Dado salvo da célula ${td.cellIndex}: ${td.textContent}`);
+        });
+        botao.innerHTML = '<i class="fa fa-edit"></i> Editar';
         linha.dataset.editando = "false";
         // Adicione aqui a lógica para salvar as alterações no banco de dados
+        alert("Alterações salvas (simulação). Implemente o envio para API.");
     }
 }
 
-// Função para excluir o acesso dos usuários
 function excluirLinha(botao) {
-    if (confirm("Tem certeza que deseja excluir este usuário?")) {
-        let linha = botao.closest('tr');
+    let linha = botao.closest('tr');
+    if (!linha) return;
+    if (confirm("Tem certeza que deseja excluir esta linha/usuário?")) {
         linha.remove();
-        // Adicione aqui a lógica para remover o usuário do banco de dados
+        // Adicione aqui a lógica para remover o usuário do banco de dados via API
+        alert("Linha excluída (simulação). Implemente a chamada à API.");
     }
 }
-
-// Exibindo a senha do usuário
 
 function toggleSenha(botao) {
-    let senhaTd = botao.closest('tr').querySelector('.senha');
-    if (senhaTd.textContent === "****") {
-        senhaTd.textContent = senhaTd.dataset.senha;
-        botao.innerHTML = '<i class="fa fa-eye-slash"></i>';
-        botao.setAttribute("data-tooltip", "Ocultar senha");
-    } else {
-        senhaTd.textContent = "****";
+    let linha = botao.closest('tr');
+    if (!linha) return;
+    let senhaTd = linha.querySelector('.senha-cell'); // Use uma classe específica para a célula da senha
+    if (!senhaTd) return;
+
+    const senhaVisivel = senhaTd.dataset.senhaVisivel === "true";
+    if (senhaVisivel) {
+        senhaTd.textContent = "****"; // Ou o que quer que seja o placeholder
         botao.innerHTML = '<i class="fa fa-eye"></i>';
-        botao.setAttribute("data-tooltip", "Mostrar senha");
+        // botao.setAttribute("data-tooltip", "Mostrar senha"); // Se usar tooltips
+        senhaTd.dataset.senhaVisivel = "false";
+    } else {
+        // Supondo que a senha real está armazenada em um data attribute na célula ou obtida de outra forma
+        senhaTd.textContent = senhaTd.dataset.senhaReal || "senha123"; // Exemplo: pegue de data-senha-real
+        botao.innerHTML = '<i class="fa fa-eye-slash"></i>';
+        // botao.setAttribute("data-tooltip", "Ocultar senha");
+        senhaTd.dataset.senhaVisivel = "true";
     }
 }
+
+// ----- FIM DO CÓDIGO PROVAVELMENTE PARA OUTRAS PÁGINAS -----
+
+
+// O código de recuperação de senha e logout_btn parece ser para uma tela de login.
+// Se esta tela (cad_produto.html) não tiver esses elementos, estes listeners não farão nada.
+document.addEventListener("DOMContentLoaded", function() {
+    const linkRecuperacao = document.querySelector(".esqueceu-senha a");
+    const formRecuperacao = document.getElementById("form-recuperacao");
+    const formLogin = document.getElementById("loginForm"); // Assumindo que este é o ID do formulário de login
+    const btnCancelarRecuperacao = document.querySelector("#form-recuperacao button[type='button']"); // Botão Cancelar no form de recuperação
+    
+    if (linkRecuperacao && formLogin && formRecuperacao) {
+        linkRecuperacao.addEventListener("click", function(event) {
+            event.preventDefault();
+            formLogin.style.display = "none";
+            formRecuperacao.style.display = "block";
+        });
+    }
+    
+    if (btnCancelarRecuperacao && formLogin && formRecuperacao) {
+        btnCancelarRecuperacao.addEventListener("click", function() {
+            formRecuperacao.style.display = "none";
+            formLogin.style.display = "block";
+        });
+    }
+
+    const logoutButton = document.getElementById("logout_btn"); // Botão de logout geral
+    if (logoutButton) {
+        logoutButton.addEventListener("click", function () {
+            if (confirm("Tem certeza que deseja sair?")) {
+                localStorage.removeItem('jwtToken'); // Limpa token
+                window.location.href = "index.html"; // Redireciona para a tela de login
+            }
+        });
+    }
+});
