@@ -35,7 +35,7 @@
                 <img src="assets/Logo.png" alt="Logo">
                 <div class="container-modulos">
                     <img src="assets/Modulos.png" alt="Modulos">
-                    <img src="assets/Notificações.png" alt="Notificações">
+                    <img src="assets/notificacao.png" alt="Notificações">
                     <div class="perfil">
                         <img src="assets/Perfil.png" alt="Foto de Perfil">
                         <div class="perfil-descricao">
@@ -159,7 +159,36 @@
                     </table>
                 </div>
                 
-                              
+                <div id="popup-edicao" class="popup" style="display: none;">
+                    <div class="popup-conteudo-edicao">
+                        <span class="fechar-popup-edicao" onclick="fecharPopUp()">&times;</span>
+                        <h2 id="popup-titulo">Editar Produto</h2>
+                        <form id="form-editar">
+                            <input type="hidden" id="editar-idProduto">
+                            <label>TAG:</label>
+                            <input type="text" id="editar-tag" required>
+                            <label>Nome:</label>
+                            <input type="text" id="editar-nome" required>
+                            <label>Descrição:</label>
+                            <textarea id="editar-descricao"></textarea>
+                            <label>Unidade:</label>
+                            <select id="editar-medida">
+                                <option value="un">UN</option>
+                                <option value="kg">KG</option>
+                                <option value="lt">LT</option>
+                            </select>
+                            <label>Valor (R$):</label>
+                            <input type="number" step="0.01" id="editar-precoVenda" required>
+                            <label>Quantidade:</label>
+                            <input type="number" id="editar-quantidade" required>
+                            <div class="popup-botoes">
+                                <button type="submit" class="btn_salvar">Salvar</button>
+                                <button type="button" class="btn_remover" onclick="fecharPopUp()">Cancelar</button>
+                	        </div>
+                        </form>
+                    </div>
+                </div> 
+
             </div>
         </div>
     </main>
