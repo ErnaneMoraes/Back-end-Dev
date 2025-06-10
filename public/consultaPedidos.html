@@ -70,17 +70,32 @@
 
                 <!-- Seção de filtro de buscas dos pedidos -->
                 <div class="frm_pedidos">
-                    <img src="assets/filtro.png" alt="Ícone de Filtro">
-                    <label for="filtro">Filtrar por: </label>
-                    <select name="filtro" id="coluna-filtro">
+                    <div class="busca-pedidos">
+                        <img src="assets/filtro.png" alt="Ícone de Filtro">
+                        <label for="filtro">Filtrar por: </label>
+                        <select name="filtro" id="coluna-filtro">
                         <option value="nome">Nome</option>
                         <option value="cpf_cnpj">CPF/CNPJ</option>
                         <option value="UF">UF</option>
                         <option value="cidade">Cidade</option>
-                    </select>
-                    <input type="text" id="buscar_pedidos" name="buscar_pedidos" placeholder="Digite sua busca...">
-                    <button onclick="abrirPopup('exportar')">Exportar Relatório</button>
+                        </select>
+                        <input type="text" id="buscar_pedidos" name="buscar_pedidos" placeholder="Digite sua busca...">
+                        <button onclick="abrirPopup('exportar')">Exportar Relatório</button>
+                    </div>
+                     
+                    <div class="btn-estoque">
+                        <!-- Botão Excluir -->
+                        <button id="exluir-pedido" class="btn_remover-pedido" type="reset">Excluir</button>
+                    
+                        <!-- Botão Atualizar (passando o ID do produto) -->
+                        <button class="btn_editar-pedido" >Atualizar</button>
+
+                        <!-- onclick="abrirPopUp('atualizar', 5)"-->
+                        <!-- Botão Novo -->
+                        <a href="pedido.html"><button class="btn_salvar-pedido" >Novo</button></a>
+                    </div>
                 </div>
+                
                 
                 <!-- Tabela de pedidos -->
                 <div class="tabela-container">

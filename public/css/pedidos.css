@@ -134,12 +134,12 @@
     height: 30px;
 }
 
-.frm_pedidos select, input, button {
+.busca-pedidos select, input, button {
     padding: 8px;
     font-size: 16px;
 }
 
-.frm_pedidos button {
+.busca-pedidos button {
     background-color: #007BFF;
     color: #fff;
     border: none;
@@ -147,8 +147,30 @@
     border-radius: 5px;
 }
 
-.frm_pedidos button:hover {
+.busca-pedidos button:hover {
     background-color: #0056b3;
+}
+
+button.btn_remover-pedido,
+button.btn_salvar-pedido,
+button.btn_editar-pedido {
+    width: 100px;
+}
+
+button.btn_remover-pedido {
+    background-color: red;
+}
+
+button.btn_salvar-pedido {
+    background-color: #00CF3B;
+    width: 100px;
+}
+
+button.btn_remover-pedido:hover,
+button.btn_salvar-pedido:hover,
+button.btn_editar-pedido:hover {
+    background-color: #ddd;
+    color: #000;
 }
 
 /* Estilizando tabela de consulta de pedidos */
