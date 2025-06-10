@@ -12,17 +12,21 @@ class Pedido {
     }
 
     async registrarPedido() {
+
+        console.log('--- DEBUG: Itens recebidos no método registrarPedido ---', this.itens);
         try {
             await this.connection.beginTransaction();
 
-            const subtotal = this.itens.reduce((sum, item) => sum + (item.quantidade * item.precoUnitario), 0);
-            const produto = this.itens[0];
-            const vencimento = new Date();
-            vencimento.setDate(vencimento.getDate() + 7);
-            const total = subtotal;
+            const totalGeral = this.itens.reduce((sum, item) => {
+                return sum + (item.quantidade * item.precoUnitario);
+            }, 0);
 
-            const [resultPedido] = await this.connection.execute(
-                `INSERT INTO tb_pedido (
+            const primeiroItem = this.itens[0];
+            const vencimento = new Date();
+            vencimento.setDate(vencimento.getDate() + 7); 
+
+            const queryPedido = `
+                INSERT INTO tb_pedido (
                     ID_PRODUTO_FK, 
                     ID_PESSOA_FK, 
                     QUANTIDADE, 
@@ -31,33 +35,44 @@ class Pedido {
                     PARCELAS, 
                     VENCIMENTO, 
                     TOTAL
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    produto.idProduto,
-                    this.idPessoa,
-                    produto.quantidade,
-                    subtotal,
-                    this.formaPgto,
-                    this.parcelas,
-                    vencimento.toISOString().split('T')[0],
-                    total
-                ]
-            );
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
+            const [resultPedido] = await this.connection.execute(queryPedido, [
+                primeiroItem.idProduto, 
+                this.idPessoa,
+                primeiroItem.quantidade, 
+                totalGeral, 
+                this.formaPgto,
+                this.parcelas,
+                vencimento.toISOString().split('T')[0],
+                totalGeral 
+            ]);
 
             const idPedido = resultPedido.insertId;
 
-            await this.connection.execute(
-                `INSERT INTO tb_hist_pedido (
-                    ID_PEDIDO_FK, DATA, STATUS
-                ) VALUES (?, ?, ?)`,
-                [idPedido, new Date().toISOString().split('T')[0], this.status]
-            );
+            for (const item of this.itens) {
+                const queryItemPedido = `
+                    INSERT INTO tb_itens_pedidos (ID_PEDIDO_FK, ID_PRODUTO_FK, QUANTIDADE) 
+                    VALUES (?, ?, ?)`;
+                await this.connection.execute(queryItemPedido, [
+                    idPedido,
+                    item.idProduto,
+                    item.quantidade
+                ]);
+
+                const queryUpdateEstoque = `
+                    UPDATE tb_produto 
+                    SET QUANTIDADE = QUANTIDADE - ? 
+                    WHERE ID_PRODUTO_PK = ?`;
+                await this.connection.execute(queryUpdateEstoque, [
+                    item.quantidade,
+                    item.idProduto
+                ]);
+            }
 
             await this.connection.execute(
-                `UPDATE tb_produto 
-                 SET QUANTIDADE = QUANTIDADE - ? 
-                 WHERE ID_PRODUTO_PK = ?`,
-                [produto.quantidade, produto.idProduto]
+                `INSERT INTO tb_hist_pedido (ID_PEDIDO_FK, DATA, STATUS) VALUES (?, ?, ?)`,
+                [idPedido, new Date().toISOString().split('T')[0], this.status]
             );
 
             await this.connection.commit();
@@ -65,7 +80,7 @@ class Pedido {
 
         } catch (err) {
             await this.connection.rollback();
-            console.error('Erro ao registrar pedido:', err);
+            console.error('Erro ao registrar pedido, transação revertida:', err);
             throw err;
         }
     }
