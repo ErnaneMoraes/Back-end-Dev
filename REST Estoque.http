@@ -1,0 +1,157 @@
+### Configurações globais
+@baseUrl = https://sistema-araleve.onrender.com/api/itens
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6MSwiaWF0IjoxNzQ4ODAwMjU4LCJleHAiOjE3NDg4NDM0NTh9.M6NvEAz3_jN7r3KeA0lChEaFHNH50O_KhYTzzaaaze8
+
+### Teste de Login
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+    "login": "ernane",
+    "senha": "Unileste"
+}
+
+### 1. Criar um novo item (POST)Add commentMore actions
+POST {{baseUrl}}/
+Content-Type: application/json
+x-access-token: {{token}}
+
+{
+  "nome": "Notebook Dell",
+  "precoCusto": 3500.00,
+  "precoVenda": 4200.00,
+  "descricao": "Notebook Dell Inspiron 15",
+  "tag": "eletronicos",
+  "medida": "un"
+}
+
+### 2. Criar item com dados mínimos (POST)
+POST {{baseUrl}}/
+Content-Type: application/json
+x-access-token: {{token}}
+
+{
+  "nome": "Mouse sem fio",
+  "precoCusto": 50.00,
+  "precoVenda": 89.90
+}
+
+### 3. Tentativa de criar item inválido (faltando campos obrigatórios)
+POST {{baseUrl}}/
+Content-Type: application/json
+x-access-token: {{token}}
+
+{
+  "nome": "Item inválido",
+  "precoVenda": 100.00
+}
+
+### 4. Listar todos os itens (GET)
+GET {{baseUrl}}/
+Content-Type: application/json
+x-access-token: {{token}}
+
+### 5. Buscar item por ID (GET) - Substitua :id pelo ID real
+@itemId = 1  # Atualize com um ID válido após criar um item
+GET {{baseUrl}}/{{itemId}}
+Content-Type: application/json
+x-access-token: {{token}}
+
+### 6. Atualizar item (PUT) - Substitua :id pelo ID real
+PUT {{baseUrl}}/19
+Content-Type: application/json
+x-access-token: {{token}}
+
+{
+  "nome": "Notebook Dell Atualizado",
+  "precoCusto": 3600.00,
+  "precoVenda": 4300.00,
+  "descricao": "Modelo mais recente",
+  "quantidade": 10
+}
+
+### 7. Atualizar quantidade do item (PATCH)
+PATCH {{baseUrl}}/19/quantidade
+Content-Type: application/json
+x-access-token: {{token}}
+
+{
+  "quantidade": 0
+}
+
+### 8. Tentativa de deletar item com estoque (DELETE)
+DELETE {{baseUrl}}/19
+Content-Type: application/json
+x-access-token: {{token}}
+
+### 9. Deletar item sem estoque (DELETE) - Primeiro atualize a quantidade para 0
+PATCH {{baseUrl}}/{{itemId}}/quantidade
+Content-Type: application/json
+x-access-token: {{token}}
+
+{
+  "quantidade": 0
+}
+
+### Agora pode deletar
+DELETE {{baseUrl}}/28
+Content-Type: application/json
+x-access-token: {{token}}
+
+### ----------------------------------------------------------------
+POST {{baseUrl}}/
+Content-Type: application/json
+x-access-token: {{token}}
+
+{
+  "nome": "Folha de Metal Galvanizado",
+  "precoCusto": 85.00,
+  "precoVenda": 120.00,
+  "descricao": "Folha de aço galvanizado 0.50mm - 2.44m x 1.22m",
+  "tag": "chapas_metalicas",
+  "medida": "un"
+}
+
+### ----------------------------------------------------------------
+POST {{baseUrl}}/
+Content-Type: application/json
+x-access-token: {{token}}
+
+{
+  "nome": "Telha Metálica Trapezoidal",
+  "precoCusto": 32.50,
+  "precoVenda": 45.90,
+  "descricao": "Telha trapezoidal em aço galvanizado - 0.40mm - 6 metros",
+  "tag": "telhas_metalicas",
+  "medida": "un"
+}
+
+### ----------------------------------------------------------------
+POST {{baseUrl}}/
+Content-Type: application/json
+x-access-token: {{token}}
+
+{
+  "nome": "Parafuso p/ Telha Metálica com Arruela",
+  "precoCusto": 0.85,
+  "precoVenda": 1.20,
+  "descricao": "Parafuso autoperfurante com arruela de vedação - 5.5x19mm",
+  "tag": "fixadores",
+  "medida": "cx",
+  "quantidade": 100
+}
+
+### ----------------------------------------------------------------
+
+POST {{baseUrl}}/
+Content-Type: application/json
+x-access-token: {{token}}
+
+{
+  "nome": "Kit Telhado Metálico Completo",
+  "precoCusto": 1850.00,
+  "precoVenda": 2500.00,
+  "descricao": "Kit completo para telhado metálico 50m² (telhas, parafusos, calhas e acessórios)",
+  "tag": "kits_completos",
+  "medida": "kit"
+}
