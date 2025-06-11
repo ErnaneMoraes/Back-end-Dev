@@ -42,7 +42,459 @@ document.addEventListener('DOMContentLoaded', function () {
             if (ufInput) ufInput.value = cliente.UF || '';
         });
     }
+
+
+    // LÓGICA PARA BOTÃO DE EXCLUIR PEDIDOS
+// ===================================================================================
+// ===================================================================================
+    // LÓGICA PARA BOTÕES DE AÇÃO: EXCLUIR, ATUALIZAR, NOVO
+    // ===================================================================================
+    const tabelaPedidos = document.getElementById('tabela-pedidos'); // O <tbody> da sua tabela
+    const checkboxSelecionarTodos = document.getElementById('selecionar-todos');
+    const btnExcluir = document.getElementById('exluir-pedido'); // ID do seu botão 'Excluir'
+    const btnAtualizar = document.querySelector('.btn_editar-pedido'); // Botão Atualizar
+    const btnNovo = document.querySelector('.btn_salvar-pedido'); // Botão Novo
+
+    // --- Lógica para o checkbox "Selecionar Todos" ---
+    if (checkboxSelecionarTodos) {
+        checkboxSelecionarTodos.addEventListener('change', function() {
+            // Seleciona todas as checkboxes de linha (com a classe 'checkbox-linha')
+            const checkboxesLinha = tabelaPedidos.querySelectorAll('input[type="checkbox"].checkbox:not(#selecionar-todos)');
+            checkboxesLinha.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+
+    // --- Lógica para o Botão "Excluir" ---
+    if (btnExcluir) {
+        btnExcluir.addEventListener('click', () => {
+            // Pega apenas as checkboxes de linha que estão marcadas
+            const checkboxesLinhaSelecionadas = tabelaPedidos.querySelectorAll('input[type="checkbox"].checkbox:checked:not(#selecionar-todos)');
+
+            // Coleta os IDs dos pedidos selecionados
+            const idsParaExcluir = Array.from(checkboxesLinhaSelecionadas).map(checkbox => {
+                // Pega o elemento <tr> pai da checkbox e, em seguida, o valor de data-pedido-id
+                return checkbox.closest('tr').dataset.pedidoId;
+            }).filter(id => id !== undefined); // Garante que IDs inválidos (e.g., linhas sem data-pedido-id) sejam removidos
+
+            if (idsParaExcluir.length === 0) {
+                mostrarErro('Por favor, selecione um ou mais pedidos para excluir.');
+                return; // Para a execução se nenhum item for selecionado
+            }
+
+            // Confirmação com o usuário
+            const confirmacao = confirm(`Você tem certeza que deseja excluir ${idsParaExcluir.length} pedido(s) selecionado(s)?`);
+
+            if (confirmacao) {
+                console.log('Solicitando exclusão dos IDs:', idsParaExcluir);
+
+                // Mapeia cada ID selecionado para uma Promessa de exclusão individual
+                const promisesDeExclusao = idsParaExcluir.map(id => {
+                    const token = localStorage.getItem('token'); // Obtém o token de autenticação
+                    return fetch(`${API_URL}/api/pedidos/${id}`, { // Usa a API_URL e o ID do pedido na URL
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}` // Adiciona o cabeçalho de autenticação
+                        },
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            // Se a resposta não for OK (status 4xx ou 5xx), tenta ler o erro do servidor
+                            return response.json().then(err => {
+                                // Rejeita a promessa com o ID e a mensagem de erro para tratamento posterior
+                                throw { id: id, message: err.message || `Erro HTTP ${response.status} na exclusão` };
+                            });
+                        }
+                        // Se a resposta for OK, retorna o ID do pedido que foi deletado com sucesso.
+                        // A sua API de delete não precisa retornar um JSON com o ID novamente,
+                        // mas podemos retornar uma estrutura que ajude o `Promise.allSettled` a identificar.
+                        return { id: id, success: true, message: 'Deletado com sucesso' };
+                    })
+                    .catch(error => {
+                        // Se houver um erro de rede ou o erro for lançado do `.then` acima,
+                        // captura e re-lança para ser pego pelo `Promise.allSettled`.
+                        // Garante que o ID do pedido seja sempre associado ao erro.
+                        if (error.id) { // Se já é um erro com ID e mensagem
+                            throw error;
+                        }
+                        throw { id: id, message: error.message || 'Erro de rede ou desconhecido' };
+                    });
+                });
+
+                // Espera que todas as promessas (sucessos ou falhas) sejam resolvidas
+                Promise.allSettled(promisesDeExclusao)
+                    .then(results => {
+                        const sucessos = results.filter(r => r.status === 'fulfilled');
+                        const falhas = results.filter(r => r.status === 'rejected');
+
+                        if (sucessos.length > 0) {
+                            // Exibe uma mensagem de sucesso para os pedidos que foram excluídos
+                            mostrarSucesso(`Sucesso ao excluir ${sucessos.length} pedido(s)!`);
+
+                            // Remove as linhas da tabela no frontend para os pedidos excluídos com sucesso
+                            sucessos.forEach(s => {
+                                // O `s.value` agora contém a estrutura `{ id: id, success: true, message: 'Deletado com sucesso' }`
+                                const idExcluido = s.value.id;
+                                const linhaParaRemover = tabelaPedidos.querySelector(`tr[data-pedido-id="${idExcluido}"]`);
+                                if (linhaParaRemover) {
+                                    linhaParaRemover.remove();
+                                }
+                            });
+
+                            // Desmarca o checkbox "selecionar todos" se não houver mais linhas visíveis na tabela
+                            if (checkboxSelecionarTodos) {
+                                if (tabelaPedidos.querySelectorAll('input[type="checkbox"].checkbox:not(#selecionar-todos)').length === 0) {
+                                    checkboxSelecionarTodos.checked = false;
+                                }
+                            }
+                        }
+
+                        if (falhas.length > 0) {
+                            // Monta uma mensagem de erro com os IDs dos pedidos que falharam e seus motivos
+                            const mensagensErro = falhas.map(f => `Pedido ${f.reason.id}: ${f.reason.message}`).join('\n');
+                            mostrarErro(`Ocorreram erros ao excluir ${falhas.length} pedido(s):\n${mensagensErro}`);
+                            console.error('Falhas na exclusão:', falhas);
+                        }
+
+                        // Recarrega a tabela de pedidos para garantir que os dados estejam sincronizados com o backend.
+                        carregarEExibirPedidos(); 
+                    })
+                    .catch(error => {
+                        // Este catch pega erros que não foram tratados nas promessas individuais (menos comum com Promise.allSettled)
+                        console.error('Erro geral no processo de exclusão:', error);
+                        mostrarErro('Ocorreu um erro inesperado ao processar a exclusão dos pedidos.');
+                    });
+            }
+        });
+    }
+
+    // --- Lógica para o Botão "Atualizar" ---
+    if (btnAtualizar) {
+        btnAtualizar.addEventListener('click', async () => {
+            const checkboxesLinhaSelecionadas = tabelaPedidos.querySelectorAll('input[type="checkbox"].checkbox:checked:not(#selecionar-todos)');
+
+            if (checkboxesLinhaSelecionadas.length === 0) {
+                mostrarErro('Por favor, selecione *um* pedido para atualizar.');
+                return;
+            }
+
+            if (checkboxesLinhaSelecionadas.length > 1) {
+                mostrarErro('Por favor, selecione *apenas um* pedido para atualizar.');
+                return;
+            }
+
+            const pedidoId = checkboxesLinhaSelecionadas[0].closest('tr').dataset.pedidoId;
+            if (!pedidoId) {
+                mostrarErro('Não foi possível obter o ID do pedido selecionado.');
+                return;
+            }
+
+            try {
+                // 1. Buscar os dados completos do pedido no backend
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/pedidos/${pedidoId}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: `Erro HTTP ${response.status}` }));
+                    throw new Error(errorData.message || 'Falha ao buscar detalhes do pedido para atualização.');
+                }
+                const pedidoParaAtualizar = await response.json();
+                
+                // Assumimos que o backend retorna um objeto 'data' com os detalhes do pedido
+                const pedidoDetalhes = pedidoParaAtualizar.data; 
+                if (!pedidoDetalhes) {
+                    throw new Error('Detalhes do pedido não encontrados na resposta do servidor.');
+                }
+                console.log('Dados do pedido para atualização:', pedidoDetalhes);
+
+                // 2. Preencher o formulário no pop-up de atualização
+                preencherFormularioAtualizacao(pedidoDetalhes);
+
+                // 3. Abrir o pop-up de atualização
+                abrirPopup('updatePedidoPopup'); // Abre o novo popup
+
+            } catch (error) {
+                console.error('Erro ao preparar atualização do pedido:', error);
+                mostrarErro(`Erro ao carregar dados do pedido para atualização: ${error.message}`);
+            }
+        });
+    }
+
+    // ===================================================================================
+    // LÓGICA DE SUBMISSÃO DO FORMULÁRIO DE ATUALIZAÇÃO
+    // ===================================================================================
+    const formAtualizarPedido = document.getElementById('formAtualizarPedido');
+    if (formAtualizarPedido) {
+        formAtualizarPedido.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Impede o envio padrão do formulário
+
+            const btnSalvarAtualizacao = formAtualizarPedido.querySelector('.btn_salvar-atualizacao');
+            if (btnSalvarAtualizacao) {
+                btnSalvarAtualizacao.disabled = true;
+                btnSalvarAtualizacao.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+            }
+
+            const pedidoId = document.getElementById('update-pedido-id-display').dataset.pedidoId; // Pega o ID que foi armazenado
+            if (!pedidoId) {
+                mostrarErro('ID do pedido para atualização não encontrado.');
+                if (btnSalvarAtualizacao) {
+                    btnSalvarAtualizacao.disabled = false;
+                    btnSalvarAtualizacao.textContent = 'Salvar Alterações';
+                }
+                return;
+            }
+
+            try {
+                const dadosAtualizados = coletarDadosFormularioAtualizacao();
+                console.log('Dados para enviar PUT:', dadosAtualizados);
+                
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/api/pedidos/${pedidoId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(dadosAtualizados)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: `Erro HTTP ${response.status}` }));
+                    throw new Error(errorData.message || 'Falha ao atualizar pedido.');
+                }
+
+                mostrarSucesso('Pedido atualizado com sucesso!');
+                fecharPopup('updatePedidoPopup'); // Fecha o popup de atualização
+                carregarEExibirPedidos(); // Recarrega a tabela para ver as mudanças
+
+            } catch (error) {
+                console.error('Erro ao atualizar pedido:', error);
+                mostrarErro(`Erro ao atualizar pedido: ${error.message}`);
+            } finally {
+                if (btnSalvarAtualizacao) {
+                    btnSalvarAtualizacao.disabled = false;
+                    btnSalvarAtualizacao.textContent = 'Salvar Alterações';
+                }
+            }
+        });
+    }
+
+    // ===================================================================================
+    // EVENTO PARA ADICIONAR PRODUTOS DENTRO DO POP-UP DE ATUALIZAÇÃO
+    // ===================================================================================
+    const btnAddProdutoUpdate = document.querySelector('.add_produto_update');
+    if (btnAddProdutoUpdate) {
+        btnAddProdutoUpdate.addEventListener('click', () => {
+            adicionarProdutoAoUpdatePopup();
+        });
+    }
+
 });
+
+/**
+ * Preenche o formulário do pop-up de atualização com os dados do pedido.
+ * @param {object} pedidoDetalhes - Objeto com os detalhes do pedido retornado pela API.
+ */
+function preencherFormularioAtualizacao(pedidoDetalhes) {
+    const updatePedidoPopup = document.getElementById('updatePedidoPopup');
+    if (!updatePedidoPopup) {
+        console.error("Pop-up de atualização ('updatePedidoPopup') não encontrado.");
+        return;
+    }
+
+    // Armazena o ID do pedido no span para fácil acesso ao coletar dados
+    const updatePedidoIdDisplay = document.getElementById('update-pedido-id-display');
+    if (updatePedidoIdDisplay) {
+        updatePedidoIdDisplay.textContent = pedidoDetalhes.ID_PEDIDO_PK || '';
+        updatePedidoIdDisplay.dataset.pedidoId = pedidoDetalhes.ID_PEDIDO_PK; // Armazena o ID no dataset
+    }
+
+    // Preenche os campos de cliente (assumindo que são readonly ou apenas exibição)
+    document.getElementById('update-cliente-nome').value = pedidoDetalhes.NOME_CLIENTE || '';
+    document.getElementById('update-id-pessoa').value = pedidoDetalhes.ID_PESSOA_FK || ''; // ID da pessoa
+    document.getElementById('update-cpf-cnpj').value = formatarDocumento(pedidoDetalhes.CPF_CNPJ_CLIENTE || '');
+
+    // Preenche os campos de pagamento e data
+    document.getElementById('update-forma-pgto').value = pedidoDetalhes.FORMA_PGTO || '';
+    document.getElementById('update-parcelas').value = pedidoDetalhes.PARCELAS || 1;
+    
+    // Formata a data de vencimento para o formato 'YYYY-MM-DD' para input[type="date"]
+    if (pedidoDetalhes.VENCIMENTO) {
+        const dataVencimento = new Date(pedidoDetalhes.VENCIMENTO);
+        const dia = String(dataVencimento.getUTCDate()).padStart(2, '0');
+        const mes = String(dataVencimento.getUTCMonth() + 1).padStart(2, '0'); // Mês é 0-indexed
+        const ano = dataVencimento.getUTCFullYear();
+        document.getElementById('update-data-vencimento').value = `${ano}-${mes}-${dia}`;
+    } else {
+        document.getElementById('update-data-vencimento').value = '';
+    }
+
+    document.getElementById('update-total-pedido').value = formatarMoeda(pedidoDetalhes.TOTAL || 0);
+    document.getElementById('update-subtotal-pedido').value = formatarMoeda(pedidoDetalhes.SUBTOTAL || 0);
+    document.getElementById('update-status').value = pedidoDetalhes.STATUS || 'Aberto';
+
+
+    // Limpa e preenche o container de produtos do pop-up de atualização
+    const updateProdutosContainer = document.getElementById('update-produtos-container');
+    if (updateProdutosContainer) {
+        updateProdutosContainer.innerHTML = '<h3>Itens do Pedido</h3>'; // Resetar o cabeçalho
+        
+        // Se a API retornar os itens do pedido separadamente (muito comum em um GET de pedido)
+        // PedidoDetalhes.itens_do_pedido
+        // IMPORTANTE: Sua rota GET /api/pedidos/:id atualmente não retorna a lista de itens detalhados.
+        // Ela retorna um único registro de pedido JOINed com cliente e produto.
+        // Para editar os itens, a API GET /api/pedidos/:id precisaria retornar um array de itens.
+        // Por enquanto, vou simular com o único produto retornado pelo JOIN.
+        
+        // Simulação de item único com base no GET atual
+        if (pedidoDetalhes.ID_PRODUTO_FK) {
+            const itemUnico = {
+                idProduto: pedidoDetalhes.ID_PRODUTO_FK,
+                nomeProduto: pedidoDetalhes.NOME_PRODUTO,
+                quantidade: pedidoDetalhes.QUANTIDADE,
+                precoUnitario: (pedidoDetalhes.SUBTOTAL / pedidoDetalhes.QUANTIDADE) || 0, // Recalcula o preço unitário
+                desconto: pedidoDetalhes.DESCONTO_TOTAL || 0
+            };
+            adicionarProdutoAoUpdatePopup(itemUnico);
+        } else {
+            // Se não houver produto no pedido (o que é raro para um pedido)
+            adicionarProdutoAoUpdatePopup(); // Adiciona uma linha vazia para começar
+        }
+    }
+    // Recalcula os totais após preencher tudo
+    calcularTotalPedido(updateProdutosContainer); // Calcula o total para o pop-up
+}
+
+/**
+ * Adiciona uma nova linha de produto ao formulário de atualização do pedido.
+ * @param {object} [item=null] - Dados do item para preencher a linha (opcional).
+ */
+function adicionarProdutoAoUpdatePopup(item = null) {
+    const container = document.getElementById('update-produtos-container');
+    if (!container) {
+        console.error("Container de produtos de atualização ('update-produtos-container') não encontrado.");
+        return;
+    }
+    const novoProdutoDiv = document.createElement('div');
+    novoProdutoDiv.className = 'info-produtos-update'; // Classe diferente para estilização se necessário
+    
+    // HTML para a linha de produto. Usa 'produtosDisponiveis' para popular o select.
+    novoProdutoDiv.innerHTML = `
+        <div class="campo-cad">
+            <label>Produto</label>
+            <select name="produto_update[]" class="select-produto" required>
+                <option value="">Selecione um produto</option>
+                ${produtosDisponiveis.map(produto => `
+                    <option value="${produto.idProduto}" data-preco="${produto.precoVenda}" 
+                        ${item && item.idProduto == produto.idProduto ? 'selected' : ''}>
+                        ${produto.nome} (${formatarMoeda(produto.precoVenda)})
+                    </option>
+                `).join('')}
+            </select>
+        </div>
+        <div class="campo-cad">
+            <label>Quantidade</label>
+            <input type="number" name="quantidade_update[]" placeholder="Ex.: 1" min="1" 
+                   value="${item ? item.quantidade : 1}" class="quantidade-produto">
+        </div>
+        <div class="campo-cad">
+            <label>Desconto</label>
+            <input type="text" name="desconto_update[]" placeholder="R$ 0,00" 
+                   value="${item ? formatarMoeda(item.desconto) : formatarMoeda(0)}" class="desconto-produto">
+        </div>
+        <div class="campo-cad">
+            <label>Subtotal</label>
+            <input type="text" name="subtotal_update[]" placeholder="R$ 0,00" readonly class="subtotal-produto">
+        </div>
+        <div class="container_novo_produto">
+            <button type="button" class="remover_produto_update">
+                <img src="assets/remover_produto.png" alt="Remover produto" />
+            </button>
+        </div>
+    `;
+    container.appendChild(novoProdutoDiv);
+
+    // Adiciona listeners para os inputs da nova linha
+    novoProdutoDiv.querySelector('.remover_produto_update').addEventListener('click', function() {
+        removerProdutoUpdate(this);
+    });
+
+    // Recalcula o subtotal da linha recém-adicionada e o total geral
+    calcularSubtotal(novoProdutoDiv.querySelector('.select-produto')); // Dispara o cálculo para a nova linha
+}
+
+function removerProdutoUpdate(botaoRemover) {
+    botaoRemover.closest('.info-produtos-update')?.remove();
+    const updateProdutosContainer = document.getElementById('update-produtos-container');
+    calcularTotalPedido(updateProdutosContainer); // Recalcula o total para o pop-up
+}
+
+/**
+ * Coleta os dados do formulário de atualização do pedido.
+ * @returns {object} Objeto com os dados do pedido a serem enviados para a API.
+ */
+function coletarDadosFormularioAtualizacao() {
+    const form = document.getElementById('formAtualizarPedido');
+    const pedidoId = document.getElementById('update-pedido-id-display').dataset.pedidoId; // Pega o ID
+    const formaPgto = form.querySelector('#update-forma-pgto').value;
+    const parcelas = parseInt(form.querySelector('#update-parcelas').value) || 1;
+    const vencimento = form.querySelector('#update-data-vencimento').value; // Já está em YYYY-MM-DD
+    const status = form.querySelector('#update-status').value;
+    const idPessoa = document.getElementById('update-id-pessoa').value; // ID da pessoa
+
+    // Coleta os itens do pedido do pop-up de atualização
+    const listaItens = Array.from(form.querySelectorAll('.info-produtos-update'))
+        .map(linha => {
+            const select = linha.querySelector('.select-produto');
+            const quantidadeInput = linha.querySelector('.quantidade-produto');
+            const descontoInput = linha.querySelector('.desconto-produto');
+
+            if (!select || !select.value || !quantidadeInput) return null;
+
+            const quantidade = parseFloat(quantidadeInput.value);
+            if (isNaN(quantidade) || quantidade <= 0) return null;
+
+            // Encontra o produto correspondente para pegar o preço de venda atual,
+            // ou usa o dataset.preco se não encontrar no array produtosDisponiveis
+            const produtoSelecionado = produtosDisponiveis.find(p => p.idProduto == select.value);
+            const precoUnitario = produtoSelecionado ? produtoSelecionado.precoVenda : parseFloat(select.selectedOptions[0]?.dataset.preco);
+
+            let descontoValor = 0;
+            if (descontoInput && descontoInput.value) {
+                const strDesconto = String(descontoInput.value).replace(/[^\d,]/g, '').replace(',', '.');
+                descontoValor = parseFloat(strDesconto) || 0;
+            }
+
+            return {
+                idProduto: parseInt(select.value),
+                quantidade: quantidade,
+                precoUnitario: precoUnitario,
+                desconto: descontoValor // Incluir o desconto para o backend
+            };
+        })
+        .filter(item => item !== null);
+
+    // IMPORTANTE: Sua API de PUT /api/pedidos/:id espera o `idPessoa`, `listaItens`,
+    // `formaPgto`, `parcelas`, `status`.
+    // Verifique o `Pedido.atualizarPedido` no seu backend para saber exatamente o que ele espera.
+    // O backend geralmente recalcula o total e subtotal com base nos itens.
+    return {
+        idPessoa: parseInt(idPessoa), // Certifique-se que o ID da pessoa é um número
+        listaItens: listaItens,
+        formaPgto: formaPgto,
+        parcelas: parcelas,
+        vencimento: vencimento, // Envia a data no formato YYYY-MM-DD
+        status: status,
+        // total e subtotal não são enviados do frontend no PUT, o backend deve calculá-los
+        // Se sua API de PUT precisar, você precisará coletá-los aqui
+    };
+}
+
 
 async function inicializarAplicacao() {
     try {
@@ -286,6 +738,14 @@ function fecharPopup() {
     if (confirmacaoPedidoPopUp) confirmacaoPedidoPopUp.style.display = 'none';
 }
 
+function fecharPopupPedido() {
+    console.log("Função fecharPopup chamada");
+    const exportPopUp = document.getElementById('updatePedidoPopup');
+    if (exportPopUp) exportPopUp.style.display = 'none';
+
+    const confirmacaoPedidoPopUp = document.getElementById('popUp');
+    if (confirmacaoPedidoPopUp) confirmacaoPedidoPopUp.style.display = 'none';
+}
 async function confirmarPedido() {
     const popUpConfirmacao = document.getElementById('popUp');
     const btnConfirmar = popUpConfirmacao?.querySelector('.btn_salvar');
@@ -435,6 +895,7 @@ async function carregarEExibirPedidos() {
         tabelaBody.innerHTML = '';
         pedidos.forEach(pedido => {
             const tr = document.createElement('tr');
+            tr.setAttribute('data-pedido-id', pedido.ID_PEDIDO_PK);
             tr.innerHTML = `
                 <td class="checkbox-check"><input type="checkbox" class="checkbox" data-pedido-id="${pedido.ID_PEDIDO_PK}"></td>
                 <td>${pedido.ID_PEDIDO_PK || 'N/D'}</td>
@@ -603,3 +1064,4 @@ window.confirmarPedido = confirmarPedido;
 window.fecharPopUp = fecharPopUp;
 
 //olá
+

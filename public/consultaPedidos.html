@@ -211,6 +211,67 @@
                        </div>
                     </div>
                 </div>
+
+                <!-- popUp para editar um pedido -->
+                <div id="updatePedidoPopup" class="popup-overlay" style="display: none;">
+                    <div class="poppup-content">
+                        <span class="close-btn" onclick="fecharPopupPedido('updatePedidoPopup')">&times;</span>
+                        <h2>Atualizar Pedido <span id="update-pedido-id-display"></span></h2>
+                        <form id="formAtualizarPedido">
+                            <div class="campo-cad">
+                                <label for="update-cliente-nome">Cliente:</label>
+                                <input type="text" id="update-cliente-nome" name="nomeCliente" readonly>
+                                <input type="hidden" id="update-id-pessoa" name="idPessoa">
+                            </div>
+                            <div class="campo-cad">
+                                <label for="update-cpf-cnpj">CPF/CNPJ:</label>
+                                <input type="text" id="update-cpf-cnpj" name="cpfCnpj" readonly>
+                            </div>
+                            <div id="update-produtos-container">
+                                <h3>Itens do Pedido</h3>
+                                </div>
+                            <button type="button" class="add_produto_update">Adicionar Produto</button>
+                            <hr>
+                            <div class="campo-cad">
+                                <label for="update-forma-pgto">Forma de Pagamento:</label>
+                                <select id="update-forma-pgto" name="formaPgto">
+                                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                                    <option value="Débito">Débito</option>
+                                    <option value="Pix">Pix</option>
+                                    <option value="Boleto">Boleto</option>
+                                    <option value="Dinheiro">Dinheiro</option>
+                                </select>
+                            </div>
+                            <div class="campo-cad">
+                                <label for="update-parcelas">Parcelas:</label>
+                                <input type="number" id="update-parcelas" name="parcelas" min="1" value="1">
+                            </div>
+                            <div class="campo-cad">
+                                <label for="update-data-vencimento">Data de Vencimento:</label>
+                                <input type="date" id="update-data-vencimento" name="vencimento">
+                            </div>
+                            <div class="campo-cad">
+                                <label for="update-subtotal-pedido">Subtotal do Pedido:</label>
+                                <input type="text" id="update-subtotal-pedido" name="subtotal" readonly>
+                            </div>
+                            <div class="campo-cad">
+                                <label for="update-total-pedido">Total do Pedido:</label>
+                                <input type="text" id="update-total-pedido" name="total" readonly>
+                            </div>
+                            <div class="campo-cad">
+                                <label for="update-status">Status:</label>
+                                <select id="update-status" name="status">
+                                    <option value="Aberto">Aberto</option>
+                                    <option value="Processando">Processando</option>
+                                    <option value="Concluído">Concluído</option>
+                                    <option value="Cancelado">Cancelado</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn_salvar-atualizacao">Salvar Alterações</button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
         
