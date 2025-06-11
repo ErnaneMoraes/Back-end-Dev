@@ -342,6 +342,8 @@ async function emitirPedido() {
         })
         .filter(item => item !== null);
 
+    console.log('--- DEBUG: Itens recebidos no método registrarPedido ---', itens);
+
     if (itens.length === 0) throw new Error('Nenhum produto válido adicionado ao pedido.');
 
     const formaPagamentoSelect = form.querySelector('select[name="forma_pagamento"]');

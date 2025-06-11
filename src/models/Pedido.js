@@ -13,10 +13,8 @@ class Pedido {
 
     async registrarPedido() {
 
-        console.log('--- DEBUG: Itens recebidos no método registrarPedido ---', this.itens);
         try {
             await this.connection.beginTransaction();
-
             const totalGeral = this.itens.reduce((sum, item) => {
                 return sum + (item.quantidade * item.precoUnitario);
             }, 0);
